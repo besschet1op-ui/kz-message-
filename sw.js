@@ -1,23 +1,48 @@
-self.addEventListener('install',e=>self.skipWaiting());
-self.addEventListener('activate',e=>e.waitUntil(clients.claim()));
-
-self.addEventListener('push',e=>{
-const data=e.data?e.data.json():{};
-e.waitUntil(self.registration.showNotification(data.title||'KZ Messenger',{
-body:data.body||'Новое сообщение',
-icon:data.icon||'/icon-192.png',
-badge:'/icon-192.png',
-tag:data.tag||'kz-push',
-data:{url:data.url||'./index.html'},
-requireInteraction:false,
-vibrate:[200,100,200]
-}));
+self.addEventListener('install', event => {
+    self.skipWaiting();
 });
 
-self.addEventListener('notificationclick',e=>{
-e.notification.close();
-e.waitUntil(clients.matchAll({type:'window'}).then(list=>{
-for(const client of list){if('focus'in client)return client.focus();}
-if(clients.openWindow)return clients.openWindow('./index.html');
-}));
+self.addEventListener('activate', event => {
+    event.waitUntil(clients.claim());
+});
+
+// Обработка входящего PUSH сообщения от сервера
+self.addEventListener('push', event => {
+    const data = event.data ? event.data.json() : {};
+    const title = data.title || 'KZ Messenger';
+    const options = {
+        body: data.body || 'Новое сообщение',
+        icon: '/icons/icon-192.png',
+        badge: '/icons/icon-192.png',
+        vibrate: [200, 100, 200],
+        data: {
+            url: data.url || '/',
+            chatId: data.chatId
+        },
+        tag: data.tag || 'kz-msg-' + Date.now()
+    };
+
+    event.waitUntil(
+        self.registration.showNotification(title, options)
+    );
+});
+
+// Клик по уведомлению
+self.addEventListener('notificationclick', event => {
+    event.notification.close();
+    
+    event.waitUntil(
+        clients.matchAll({ type: 'window' }).then(clientList => {
+            // Если окно открыто, фокусируем его
+            for (const client of clientList) {
+                if (client.url === '/' && 'focus' in client) {
+                    return client.focus();
+                }
+            }
+            // Иначе открываем новое
+            if (clients.openWindow) {
+                return clients.openWindow(event.notification.data.url);
+            }
+        })
+    );
 });
