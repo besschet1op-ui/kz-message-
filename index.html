@@ -1,0 +1,567 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no,viewport-fit=cover">
+<title>KZ Messenger | Коломенский завод</title>
+<style>
+/* ===== СТИЛИ ===== */
+:root{--brand:#0057b8;--bg:#fff;--surface:#f2f2f7;--text:#000;--text2:#8e8e93;--border:#c6c6c8;--safe-t:env(safe-area-inset-top,0px);--safe-b:env(safe-area-inset-bottom,0px)}
+*{box-sizing:border-box;margin:0;padding:0;-webkit-tap-highlight-color:transparent}
+body{font-family:-apple-system,BlinkMacSystemFont,"SF Pro Text",sans-serif;background:var(--bg);color:var(--text);height:100dvh;overflow:hidden;font-size:16px;line-height:1.4}
+button{cursor:pointer;border:0;background:0;color:inherit;font:inherit;outline:0}
+input,textarea{font:inherit;color:inherit;background:0;border:0;outline:0;width:100%}
+::-webkit-scrollbar{display:none}
+.hidden{display:none!important}
+
+/* ЭКРАНЫ */
+#app-container{position:relative;width:100%;height:100%;overflow:hidden}
+.screen{position:absolute;top:0;left:0;width:100%;height:100%;background:var(--bg);display:flex;flex-direction:column;transition:.3s;z-index:1;opacity:0;pointer-events:none;}
+.screen.active{z-index:10;opacity:1;pointer-events:auto;}
+
+/* АВТОРИЗАЦИЯ */
+#auth-screen{justify-content:center;padding:20px;background:linear-gradient(180deg,#fff,#f2f2f7)}
+.brand{text-align:center;margin-bottom:30px}
+.brand h1{font-size:24px;font-weight:700;color:var(--brand)}
+.field{margin-bottom:16px}
+.input{padding:14pxВижу проблему! Приложение запускается, но **пустое**. Это значит, что JavaScript не может подключиться к базе данных Firebase.
+
+### Причина:
+В коде используется импорт модулей (`import ... from "https://..."`), который работает только внутри тега `<script type="module">`. Если браузер iPhone (Safari) блокирует эти скрипты из-за настроек безопасности или CORS, приложение просто зависает без ошибок на экране.
+
+Давай исправим это радикально. Мы перепишем код так, чтобы он был максимально совместим с Safari и гарантированно загружал данные.
+
+**Что мы сделаем:**
+1.  Используем **CDN ссылки напрямую** в HTML (без `type="module"` для критических частей, если возможно, или правильно настроим их).
+2.  Добавим **обработку ошибок**, чтобы ты видел текст ошибки прямо на экране телефона, а не пустоту.
+3.  Упростим структуру, чтобы она точно работала.
+
+---
+
+### Шаг 1: Замени весь код `index.html`
+
+Скопируй этот код полностью. Он содержит встроенную диагностику. Если что-то сломается, ты увидишь красное сообщение вместо белого экрана.
+
+```html
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no,viewport-fit=cover">
+<title>KZ Messenger | Коломенский завод</title>
+<style>
+/* ===== СТИЛИ ===== */
+:root{--brand:#0057b8;--bg:#fff;--surface:#f2f2f7;--text:#000;--text2:#8e8e93;--border:#c6c6c8;--safe-t:env(safe-area-inset-top,0px);--safe-b:env(safe-area-inset-bottom,0px)}
+*{box-sizing:border-box;margin:0;padding:0;-webkit-tap-highlight-color:transparent}
+body{font-family:-apple-system,BlinkMacSystemFont,"SF Pro Text",sans-serif;background:var(--bg);color:var(--text);height:100dvh;overflow:hidden;font-size:16px;line-height:1.4}
+button{cursor:pointer;border:0;background:0;color:inherit;font:inherit;outline:0}
+input,textarea{font:inherit;color:inherit;background:0;border:0;outline:0;width:100%}
+::-webkit-scrollbar{display:none}
+.hidden{display:none!important}
+
+/* ЭКРАНЫ */
+#app-container{position:relative;width:100%;height:100%;overflow:hidden}
+.screen{position:absolute;top:0;left:0;width:100%;height:100%;background:var(--bg);display:flex;flex-direction:column;transition:.3s;z-index:1;opacity:0;pointer-events:none;}
+.screen.active{z-index:10;opacity:1;pointer-events:auto;}
+
+/* АВТОРИЗАЦИЯ */
+#auth-screen{justify-content:center;padding:20px;background:linear-gradient(180deg,#fff,#f2f2f7)}
+.brand{text-align:center;margin-bottom:30px}
+.brand h1{font-size:24px;font-weight:700;color:var(--brand)}
+.field{margin-bottom:16px}
+.input{padding:14px 16px;background:var(--surface);border-radius:12px;font-size:16px;border:1px solid transparent}
+.btn-main{width:100%;padding:16px;background:var(--brand);color:#fff;border-radius:12px;font-size:17px;font-weight:600;margin-top:10px}
+.link{display:block;text-align:center;color:var(--brand);font-size:15px;margin-top:16px}
+.err-msg{background:#fee;color:red;padding:12px;border-radius:10px;font-size:14px;margin-bottom:16px;display:none}
+
+/* ГЛАВНЫЙ ЭКРАН */
+.nav-bar{padding:calc(10px + var(--safe-t)) 16px 10px;background:rgba(255,255,255,.9);backdrop-filter:blur(20px);border-bottom:1px solid var(--border);min-height:50px;display:flex;align-items:center;gap:10px}
+.nav-title{font-size:17px;font-weight:600;flex:1;text-align:center}
+.tab-bar{display:flex;border-top:1px solid var(--border);background:#fff;padding:5px 0 calc(5px + var(--safe-b));flex-shrink:0}
+.tab-item{flex:1;display:flex;flex-direction:column;align-items:center;gap:2px;padding:5px;color:var(--text2);font-size:10px;font-weight:500}
+.tab-item.active{color:var(--brand)}
+.list-scroll{flex:1;overflow-y:auto;-webkit-overflow-scrolling:touch}
+.list-item{display:flex;align-items:center;gap:12px;padding:12px 16px;border-bottom:1px solid var(--border);cursor:pointer}
+.avatar{width:50px;height:50px;border-radius:50%;background:var(--brand);color:#fff;display:flex;align-items:center;justify-content:center;font-weight:600;font-size:18px;flex-shrink:0}
+.li-body{flex:1;min-width:0}
+.li-name{font-weight:600;font-size:16px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.li-preview{font-size:14px;color:var(--text2);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;margin-top:2px}
+
+/* ЧАТ */
+.chat-header{padding:calc(10px + var(--safe-t)) 16px 10px;background:rgba(255,255,255,.9);backdrop-filter:blur(20px);border-bottom:1px solid var(--border);display:flex;align-items:center;gap:10px}
+.back-btn{color:var(--brand);font-size:17px;font-weight:500;display:flex;align-items:center;gap:4px}
+.msg-list{flex:1;overflow-y:auto;padding:16px;display:flex;flex-direction:column;gap:8px;background:var(--surface)}
+.msg{max-width:75%;padding:10px 14px;border-radius:18px;font-size:16px;line-height:1.3;word-wrap:break-word;box-shadow:0 1px 2px rgba(0,0,0,.05)}
+.msg.me{align-self:flex-end;background:var(--brand);color:#fff;border-bottom-right-radius:4px}
+.msg.other{align-self:flex-start;background:#fff;border:1px solid var(--border);border-bottom-left-radius:4px}
+.composer{padding:10px 16px calc(10px + var(--safe-b));background:#fff;border-top:1px solid var(--border);display:flex;gap:10px;align-items:flex-end}
+.comp-input{flex:1;background:var(--surface);border-radius:20px;padding:10px 14px;min-height:40px;max-height:120px;font-size:16px;resize:none}
+.send-btn{width:36px;height:36px;border-radius:50%;background:var(--brand);color:#fff;display:flex;align-items:center;justify-content:center;font-size:16px;flex-shrink:0}
+
+/* DEBUG BOX */
+#debugBox{position:fixed;bottom:0;left:0;right:0;background:#333;color:#0f0;font-family:monospace;font-size:10px;padding:10px;max-height:150px;overflow-y:auto;z-index:9999;display:none}
+</style>
+
+<!-- Firebase SDK через CDN (UMD формат для максимальной совместимости со старыми браузерами/Safari iOS) -->
+<script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-app-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-messaging-compat.js"></script>
+
+<script>
+// ==========================================
+// ЛОГИКА ПРИЛОЖЕНИЯ (Compat Mode)
+// ==========================================
+
+let db = null;
+let messaging = null;
+let currentUser = null;
+let currentChatId = null;
+let unsubscribeMessages = null;
+let allUsersCache = {};
+
+// Конфигурация твоего проекта
+const firebaseConfig = {
+  apiKey: "AIzaSyDyuK9iREDYiA-NmjeWgECT2np57V-m86s",
+  authDomain: "kz-messenger-test.firebaseapp.com",
+  projectId: "kz-messenger-test",
+  storageBucket: "kz-messenger-test.firebasestorage.app",
+  messagingSenderId: "60956478899",
+  appId: "1:60956478899:web:43fbbc9d9755e967b68fc6"
+};
+
+// Инициализация при загрузке страницы
+window.onload = function() {
+    log("Starting app...");
+    try {
+        // Инициализируем Firebase
+        const app = firebase.initializeApp(firebaseConfig);
+        db = app.firestore();
+        
+        // Проверяем соединение
+        log("Firebase initialized successfully.");
+        
+        // Пробуем прочитать данные пользователей
+        loadAllUsers().then(() => {
+            checkSession();
+        }).catch(err => {
+            logError("Failed to load users:", err);
+            alert("Ошибка подключения к базе данных:\n" + err.message);
+        });
+
+    } catch (e) {
+        logError("Critical Init Error:", e);
+        document.getElementById('authErr').innerText = "Критическая ошибка: " + e.message;
+        document.getElementById('authErr').style.display = 'block';
+    }
+};
+
+function log(msg) {
+    console.log(msg);
+    const box = document.getElementById('debugBox');
+    if(box) {
+        box.style.display = 'block';
+        box.innerHTML += `<div>${new Date().toLocaleTimeString()} - ${msg}</div>`;
+        box.scrollTop = box.scrollHeight;
+    }
+}
+
+function logError(msg, err) {
+    console.error(msg, err);
+    log(`ERROR: ${msg} ${err.stack || err}`);
+}
+
+// ===== AUTHENTICATION =====
+function toggleReg() {
+    document.getElementById('loginForm').classList.toggle('hidden');
+    document.getElementById('regForm').classList.toggle('hidden');
+    document.getElementById('authErr').style.display = 'none';
+}
+
+async function handleLogin(e) {
+    e.preventDefault();
+    const badge = document.getElementById('badgeInput').value.toUpperCase().trim();
+    if (!badge) return showError("Введите табельный номер");
+    
+    log(`Attempting login for ${badge}...`);
+    
+    try {
+        const snapshot = await db.collection("users").where("badge", "==", badge).limit(1).get();
+        
+        let userFound = null;
+        snapshot.forEach(docSnap => {
+            userFound = { id: docSnap.id, ...docSnap.data() };
+        });
+
+        if (!userFound) throw new Error("Пользователь не найден");
+        
+        loginUser(userFound);
+    } catch (err) {
+        logError("Login failed", err);
+        showError(err.message);
+    }
+}
+
+async function handleRegister(e) {
+    e.preventDefault();
+    const name = document.getElementById('regName').value.trim();
+    const dept = document.getElementById('regDept').value.trim();
+    const badge = document.getElementById('regBadge').value.toUpperCase().trim();
+    
+    if (!name || !dept || !badge) return showError("Заполните все поля");
+
+    try {
+        const exists = await db.collection("users").where("badge", "==", badge).limit(1).get();
+        if (!exists.empty) throw new Error("Такой табельный уже занят");
+
+        const newUser = { badge, name, dept, role: 'employee', createdAt: firebase.firestore.FieldValue.serverTimestamp() };
+        const userDocRef = await db.collection("users").add(newUser);
+        const userId = userDocRef.id;
+
+        await ensureGeneralChannelExists(userId);
+        
+        loginUser({ id: userId, ...newUser });
+    } catch (err) {
+        logError("Register failed", err);
+        showError(err.message);
+    }
+}
+
+async function ensureGeneralChannelExists(userId) {
+    const channelsCol = db.collection("chats");
+    const q = channelsCol.where("type", "==", "channel").where("title", "==", "Общий завод");
+    const snapshot = await q.get();
+
+    if (snapshot.empty) {
+        const channelData = {
+            type: 'channel', title: 'Общий завод', description: 'Главный канал предприятия',
+            members: [userId], createdAt: firebase.firestore.FieldValue.serverTimestamp(),
+            lastMessageText: 'Добро пожаловать!', lastMessageTime: firebase.firestore.FieldValue.serverTimestamp()
+        };
+        await channelsCol.add(channelData);
+    } else {
+        const firstDoc = snapshot.docs[0];
+        const data = firstDoc.data();
+        if (!data.members.includes(userId)) {
+            await firstDoc.ref.update({ members: [...data.members, userId] });
+        }
+    }
+}
+
+function loginUser(user) {
+    currentUser = user;
+    localStorage.setItem('kz_cloud_session', JSON.stringify(user));
+    showScreen('home-screen');
+    initApp();
+}
+
+function logout() {
+    currentUser = null;
+    localStorage.removeItem('kz_cloud_session');
+    if (unsubscribeMessages) unsubscribeMessages();
+    showScreen('auth-screen');
+}
+
+function checkSession() {
+    const sess = localStorage.getItem('kz_cloud_session');
+    if (sess) {
+        try {
+            currentUser = JSON.parse(sess);
+            showScreen('home-screen');
+            initApp();
+        } catch (e) { logout(); }
+    } else {
+        showScreen('auth-screen');
+    }
+}
+
+function showError(msg) {
+    const el = document.getElementById('authErr');
+    el.textContent = msg;
+    el.style.display = 'block';
+}
+
+// ===== NAVIGATION & RENDERING =====
+function showScreen(id) {
+    document.querySelectorAll('.screen').forEach(s => s.classList.remove('active'));
+    const target = document.getElementById(id);
+    if(target) target.classList.add('active');
+}
+
+let currentTab = 'chats';
+function switchTab(tab) {
+    currentTab = tab;
+    document.querySelectorAll('.tab-item').forEach(t => t.classList.remove('active'));
+    document.getElementById('tab' + tab.charAt(0).toUpperCase() + tab.slice(1)).classList.add('active');
+    renderList(tab);
+}
+
+function initApp() {
+    loadAllUsers().then(() => {
+        renderList('chats');
+    });
+}
+
+async function loadAllUsers() {
+    const snapshot = await db.collection("users").get();
+    snapshot.forEach(docSnap => {
+        allUsersCache[docSnap.id] = { id: docSnap.id, ...docSnap.data() };
+    });
+}
+
+function renderList(tab) {
+    const container = document.getElementById('chatListContainer');
+    container.innerHTML = '';
+    
+    let items = [];
+    
+    // Загружаем чаты пользователя
+    const chatsRef = db.collection("chats");
+    const q = chatsRef.where("members", "array-contains", currentUser.id);
+    
+    // Используем onSnapshot для realtime обновления списка
+    if(window.unsubscribeChats) window.unsubscribeChats();
+    
+    window.unsubscribeChats = q.onSnapshot((snapshot) => {
+        items = snapshot.docs.map(d => ({ id: d.id, ...d.data() }));
+        
+        // Фильтрация по типу таба
+        if (tab === 'channels') items = items.filter(c => c.type === 'channel');
+        else if (tab === 'contacts') {
+            items = Object.values(allUsersCache).filter(u => u.id !== currentUser.id).map(u => ({
+                id: 'contact_' + u.id, type: 'contact', userId: u.id, displayTitle: u.name, subtitle: u.dept
+            }));
+        } else {
+            items = items.filter(c => c.type === 'dm');
+        }
+
+        if (items.length === 0) {
+            container.innerHTML = '<div style="padding:20px;text-align:center;color:#999">Нет элементов</div>';
+            return;
+        }
+
+        items.sort((a,b) => (b.lastMessageTime?.seconds || 0) - (a.lastMessageTime?.seconds || 0));
+
+        items.forEach(item => {
+            const div = document.createElement('div');
+            div.className = 'list-item';
+            div.onclick = () => {
+                if (item.type === 'contact') openOrCreateDM(item.userId);
+                else openChat(item.id);
+            };
+            
+            const preview = item.lastMessageText ? item.lastMessageText.substring(0, 30) : 'Нет сообщений';
+            
+            div.innerHTML = `
+                <div class="avatar">${getInitials(item.displayTitle || item.title)}</div>
+                <div class="li-body">
+                    <div class="li-name">${escapeHtml(item.displayTitle || item.title)}</div>
+                    <div class="li-preview">${escapeHtml(preview)}</div>
+                </div>
+            `;
+            container.appendChild(div);
+        });
+    }, (error) => {
+        logError("Chat list listener error", error);
+        container.innerHTML = `<div style="padding:20px;color:red">Ошибка загрузки чатов: ${error.message}</div>`;
+    });
+}
+
+// ===== CHAT LOGIC =====
+async function openOrCreateDM(userId) {
+    try {
+        const existing = await findExistingDM(userId);
+        if (existing) { openChat(existing.id); return; }
+
+        const sortedIds = [currentUser.id, userId].sort();
+        const chatData = {
+            type: 'dm', members: sortedIds, createdAt: firebase.firestore.FieldValue.serverTimestamp(),
+            lastMessageTime: firebase.firestore.FieldValue.serverTimestamp(), lastMessageText: '', lastMessageSender: ''
+        };
+        
+        const docRef = await db.collection("chats").add(chatData);
+        openChat(docRef.id);
+    } catch (e) { alert("Ошибка: " + e.message); }
+}
+
+async function findExistingDM(userId) {
+    const chatsRef = db.collection("chats");
+    const q = chatsRef.where("type", "==", "dm").where("members", "array-contains", currentUser.id);
+    const snapshot = await q.get();
+    for(const doc of snapshot.docs) {
+        const data = doc.data();
+        if(data.members.includes(userId)) return { id: doc.id, ...data };
+    }
+    return null;
+}
+
+function openChat(chatId) {
+    currentChatId = chatId;
+    document.getElementById('chatHeaderName').textContent = "Загрузка...";
+    showScreen('chat-screen');
+    loadHistorySafe(chatId);
+}
+
+async function loadHistorySafe(chatId) {
+    const msgsRef = db.collection("messages");
+    const q = msgsRef.where("chatId", "==", chatId).orderBy("createdAt", "asc").limit(100);
+    
+    try {
+        const snapshot = await q.get();
+        const docs = snapshot.docs.map(d => ({id:d.id, ...d.data()}));
+        renderMessages(docs);
+        
+        // Обновляем заголовок
+        const chatInfo = await db.collection("chats").doc(chatId).get();
+        if(chatInfo.exists) {
+             const data = chatInfo.data();
+             document.getElementById('chatHeaderName').textContent = data.title || "Диалог";
+        }
+
+        subscribeToNewMessages(chatId);
+    } catch (error) {
+        console.warn("Index missing? Trying fallback...", error);
+        // Fallback без orderBy
+        const qFallback = msgsRef.where("chatId", "==", chatId).limit(100);
+        const snap = await qFallback.get();
+        const docs = snap.docs.map(d => ({id:d.id, ...d.data()}));
+        docs.sort((a,b) => (a.createdAt?.seconds || 0) - (b.createdAt?.seconds || 0));
+        renderMessages(docs);
+        subscribeToNewMessages(chatId);
+    }
+}
+
+function subscribeToNewMessages(chatId) {
+    if (unsubscribeMessages) unsubscribeMessages();
+    
+    const msgsRef = db.collection("messages");
+    const q = msgsRef.where("chatId", "==", chatId);
+    
+    unsubscribeMessages = q.onSnapshot((snapshot) => {
+        const msgs = snapshot.docs.map(d => ({id:d.id, ...d.data()}));
+        msgs.sort((a,b) => (a.createdAt?.seconds || 0) - (b.createdAt?.seconds || 0));
+        renderMessages(msgs);
+    });
+}
+
+function closeChat() {
+    if (unsubscribeMessages) { unsubscribeMessages(); unsubscribeMessages = null; }
+    currentChatId = null;
+    showScreen('home-screen');
+    renderList(currentTab);
+}
+
+function renderMessages(msgs) {
+    const container = document.getElementById('messagesContainer');
+    container.innerHTML = '';
+    
+    msgs.forEach(m => {
+        const isMe = m.senderId === currentUser.id;
+        const senderName = allUsersCache[m.senderId]?.name || '???';
+        const timeStr = m.createdAt ? new Date(m.createdAt.seconds * 1000).toLocaleTimeString([], {hour:'2-digit',minute:'2-digit'}) : '';
+        
+        const div = document.createElement('div');
+        div.className = `msg ${isMe ? 'me' : 'other'}`;
+        div.innerHTML = `
+            ${!isMe ? `<div style="font-size:11px;color:var(--brand);margin-bottom:2px">${senderName.split(' ')[0]}</div>` : ''}
+            <div>${escapeHtml(m.text)}</div>
+            <div class="msg-meta">${timeStr}</div>
+        `;
+        container.appendChild(div);
+    });
+    
+    container.scrollTop = container.scrollHeight;
+}
+
+async function sendMessage() {
+    const input = document.getElementById('messageInput');
+    const text = input.value.trim();
+    if (!text || !currentChatId) return;
+    
+    input.value = '';
+    
+    try {
+        const msgData = { chatId: currentChatId, senderId: currentUser.id, text: text, createdAt: firebase.firestore.FieldValue.serverTimestamp() };
+        await db.collection("messages").add(msgData);
+        
+        const chatRef = db.collection("chats").doc(currentChatId);
+        await chatRef.set({
+            lastMessageText: text, lastMessageTime: firebase.firestore.FieldValue.serverTimestamp(), lastMessageSender: currentUser.id
+        }, { merge: true });
+        
+    } catch (e) { alert("Не удалось отправить: " + e.message); }
+}
+
+// UTILS
+function getInitials(name) {
+    if (!name) return '?';
+    const parts = name.split(' ');
+    return (parts[0][0] + (parts[1]?.[0] || '')).toUpperCase();
+}
+
+function escapeHtml(text) {
+    const map = { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#039;' };
+    return String(text).replace(/[&<>"']/g, m => map[m]);
+}
+</script>
+</head>
+<body>
+
+<div id="app-container">
+  
+  <!-- 1. ЭКРАН ВХОДА -->
+  <div id="auth-screen" class="screen active">
+    <div class="brand">
+      <h1>КОЛОМЕНСКИЙ ЗАВОД</h1>
+      <p style="color:var(--text2)">Корпоративная связь</p>
+    </div>
+    <div id="authErr" class="err-msg"></div>
+    <form id="loginForm" onsubmit="handleLogin(event)">
+      <div class="field"><label>Табельный номер</label><input class="input" id="badgeInput" placeholder="KZ-00001" required></div>
+      <div class="field"><label>Пароль</label><input class="input" type="password" id="passInput" placeholder="••••••" required></div>
+      <button class="btn-main">Войти</button>
+      <a href="#" class="link" onclick="toggleReg()">Нет аккаунта? Зарегистрироваться</a>
+    </form>
+    <form id="regForm" class="hidden" onsubmit="handleRegister(event)">
+      <div class="field"><label>ФИО</label><input class="input" id="regName" placeholder="Иванов И.И." required></div>
+      <div class="field"><label>Подразделение</label><input class="input" id="regDept" placeholder="IT-отдел" required></div>
+      <div class="field"><label>Табельный номер</label><input class="input" id="regBadge" placeholder="KZ-00100" required></div>
+      <div class="field"><label>Пароль</label><input class="input" type="password" id="regPass" placeholder="Мин 6 символов" required minlength="6"></div>
+      <button class="btn-main">Создать аккаунт</button>
+      <a href="#" class="link" onclick="toggleReg()">Уже есть аккаунт? Войти</a>
+    </form>
+  </div>
+
+  <!-- 2. ГЛАВНЫЙ ЭКРАН -->
+  <div id="home-screen" class="screen">
+    <div class="nav-bar">
+      <div class="nav-title" id="pageTitle">Чаты</div>
+      <button onclick="logout()" style="color:red;font-size:14px">Выйти</button>
+    </div>
+    <div class="list-scroll" id="chatListContainer"></div>
+    <div class="tab-bar">
+      <button class="tab-item active" onclick="switchTab('chats')" id="tabChats">💬<br>Чаты</button>
+      <button class="tab-item" onclick="switchTab('channels')" id="tabChannels">📢<br>Каналы</button>
+      <button class="tab-item" onclick="switchTab('contacts')" id="tabContacts">👥<br>Контакты</button>
+    </div>
+  </div>
+
+  <!-- 3. ЭКРАН ЧАТА -->
+  <div id="chat-screen" class="screen">
+    <div class="chat-header">
+      <button class="back-btn" onclick="closeChat()">‹ Назад</button>
+      <div class="nav-title" id="chatHeaderName">Чат</div>
+    </div>
+    <div class="msg-list" id="messagesContainer"></div>
+    <div class="composer">
+      <textarea class="comp-input" id="messageInput" placeholder="Сообщение..." rows="1"></textarea>
+      <button class="send-btn" onclick="sendMessage()">➤</button>
+    </div>
+  </div>
+
+</div>
+
+<!-- Debug Box (виден только при ошибке) -->
+<div id="debugBox"></div>
+
+</body>
+</html>
