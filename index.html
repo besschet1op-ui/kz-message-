@@ -1,0 +1,580 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <!-- Критично для iOS PWA -->
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+    <meta name="theme-color" content="#000000">
+    
+    <title>KZ Messenger</title>
+    <link rel="manifest" href="./manifest.json">
+    <link rel="apple-touch-icon" href="./icons/icon-192.png">
+    
+    <style>
+        /* ===== IOS SYSTEM VARIABLES & RESET ===== */
+        :root {
+            --ios-bg: #000000;
+            --ios-surface: #1c1c1e;
+            --ios-elevated: #2c2c2e;
+            --ios-border: #38383a;
+            --ios-text: #ffffff;
+            --ios-text-secondary: #8e8e93;
+            --ios-blue: #0a84ff; /* Системный синий iOS Dark Mode */
+            --ios-green: #30d158;
+            --ios-red: #ff453a;
+            --safe-top: env(safe-area-inset-top);
+            --safe-bottom: env(safe-area-inset-bottom);
+            --safe-left: env(safe-area-inset-left);
+            --safe-right: env(safe-area-inset-right);
+        }
+
+        * { box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
+        
+        body {
+            margin: 0; padding: 0;
+            font-family: -apple-system, BlinkMacSystemFont, "SF Pro Text", "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+            background: var(--ios-bg);
+            color: var(--ios-text);
+            height: 100vh; overflow: hidden;
+            overscroll-behavior: none; /* Отключаем "резиновый" скролл страницы */
+            touch-action: manipulation;
+        }
+
+        button { cursor: pointer; border: none; background: none; color: inherit; font: inherit; outline: none; }
+        input, textarea { font: inherit; color: inherit; background: transparent; border: none; outline: none; resize: none; }
+        
+        ::-webkit-scrollbar { display: none; } /* Скрываем скроллбары как в iOS */
+
+        /* ===== UTILITIES ===== */
+        .hidden { display: none !important; }
+        .flex-col { display: flex; flex-direction: column; }
+        .flex-row { display: flex; flex-direction: row; align-items: center; }
+        .justify-between { justify-content: space-between; }
+        .items-center { align-items: center; }
+        .w-full { width: 100%; }
+        .h-full { height: 100%; }
+        .text-sm { font-size: 13px; }
+        .text-xs { font-size: 11px; }
+        .font-bold { font-weight: 600; }
+        .text-gray { color: var(--ios-text-secondary); }
+        .text-blue { color: var(--ios-blue); }
+        .bg-surface { background: var(--ios-surface); }
+        .border-b { border-bottom: 0.5px solid var(--ios-border); }
+        
+        /* Анимации переходов между экранами */
+        @keyframes slideInRight { from { transform: translateX(100%); opacity: 0; } to { transform: translateX(0); opacity: 1; } }
+        @keyframes fadeIn { from { opacity: 0; } to { opacity: 1; } }
+        .animate-slide { animation: slideInRight 0.3s cubic-bezier(0.32, 0.72, 0, 1); }
+        .animate-fade { animation: fadeIn 0.2s ease-out; }
+
+        /* ===== SCREENS CONTAINER ===== */
+        #app-container {
+            position: relative;
+            width: 100%; height: 100%;
+            overflow: hidden;
+        }
+        .screen {
+            position: absolute; top: 0; left: 0; width: 100%; height: 100%;
+            background: var(--ios-bg);
+            z-index: 1;
+            display: none;
+            flex-direction: column;
+        }
+        .screen.active { display: flex; z-index: 10; }
+
+        /* ===== AUTH SCREEN ===== */
+        #auth-screen { justify-content: center; padding: 20px calc(20px + var(--safe-right)) calc(20px + var(--safe-bottom)) calc(20px + var(--safe-left)); }
+        .auth-logo { text-align: center; margin-bottom: 40px; }
+        .auth-logo h1 { font-size: 34px; font-weight: 700; letter-spacing: -0.5px; margin: 0; }
+        .auth-logo p { color: var(--ios-text-secondary); margin-top: 8px; font-size: 15px; }
+        
+        .input-group { margin-bottom: 16px; }
+        .ios-input {
+            width: 100%; padding: 14px 16px;
+            background: var(--ios-surface);
+            border-radius: 12px;
+            font-size: 17px;
+            transition: background 0.2s;
+        }
+        .ios-input:focus { background: var(--ios-elevated); }
+        
+        .btn-primary {
+            width: 100%; padding: 16px;
+            background: var(--ios-blue);
+            color: white;
+            border-radius: 12px;
+            font-size: 17px; font-weight: 600;
+            margin-top: 10px;
+            transition: opacity 0.2s;
+        }
+        .btn-primary:active { opacity: 0.7; }
+        .btn-link { color: var(--ios-blue); font-size: 15px; margin-top: 20px; text-align: center; display: block; }
+
+        /* ===== MAIN APP LAYOUT (iOS Navigation Stack Style) ===== */
+        /* Список чатов (Root View) */
+        #list-view { z-index: 2; }
+        /* Окно чата (Detail View) */
+        #chat-view { z-index: 3; transform: translateX(100%); transition: transform 0.3s cubic-bezier(0.32, 0.72, 0, 1); }
+        #chat-view.open { transform: translateX(0); }
+
+        /* Header Common */
+        .nav-header {
+            padding-top: calc(10px + var(--safe-top));
+            padding-bottom: 10px;
+            padding-left: calc(16px + var(--safe-left));
+            padding-right: calc(16px + var(--safe-right));
+            background: rgba(28, 28, 30, 0.8);
+            backdrop-filter: blur(20px);
+            -webkit-backdrop-filter: blur(20px);
+            border-bottom: 0.5px solid var(--ios-border);
+            min-height: 50px;
+            display: flex; align-items: center; justify-content: space-between;
+        }
+        .nav-title { font-size: 17px; font-weight: 600; }
+        .back-btn { display: flex; align-items: center; gap: 4px; color: var(--ios-blue); font-size: 17px; margin-left: -8px; padding: 8px; }
+        .back-arrow { font-size: 20px; line-height: 1; }
+
+        /* List Items */
+        .scroll-area { flex: 1; overflow-y: auto; -webkit-overflow-scrolling: touch; padding-bottom: calc(20px + var(--safe-bottom)); }
+        .chat-item {
+            display: flex; align-items: center; gap: 12px;
+            padding: 12px 16px;
+            active-state: background: var(--ios-elevated);
+            border-bottom: 0.5px solid rgba(255,255,255,0.05);
+        }
+        .chat-item:active { background: var(--ios-elevated); }
+        .avatar {
+            width: 48px; height: 48px; border-radius: 50%;
+            display: flex; align-items: center; justify-content: center;
+            font-weight: 600; font-size: 18px; color: white;
+            position: relative; flex-shrink: 0;
+        }
+        .avatar.channel { border-radius: 12px; }
+        .online-dot {
+            position: absolute; bottom: 0; right: 0;
+            width: 12px; height: 12px; border-radius: 50%;
+            background: var(--ios-green);
+            border: 2px solid var(--ios-bg);
+        }
+        .chat-info { flex: 1; min-width: 0; }
+        .chat-name-row { display: flex; justify-content: space-between; margin-bottom: 2px; }
+        .chat-name { font-size: 16px; font-weight: 600; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+        .chat-time { font-size: 13px; color: var(--ios-text-secondary); }
+        .chat-preview { font-size: 14px; color: var(--ios-text-secondary); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+        .badge {
+            background: var(--ios-blue); color: white;
+            font-size: 12px; font-weight: 600;
+            min-width: 18px; height: 18px; border-radius: 9px;
+            display: flex; align-items: center; justify-content: center;
+            padding: 0 5px;
+        }
+
+        /* Chat Messages */
+        .messages-list { padding: 16px; display: flex; flex-direction: column; gap: 8px; }
+        .msg-wrapper { max-width: 75%; display: flex; flex-direction: column; }
+        .msg-wrapper.me { align-self: flex-end; align-items: flex-end; }
+        .msg-wrapper.other { align-self: flex-start; align-items: flex-start; }
+        
+        .bubble {
+            padding: 10px 14px; border-radius: 18px;
+            font-size: 16px; line-height: 1.35; word-wrap: break-word;
+        }
+        .me .bubble { background: var(--ios-blue); color: white; border-bottom-right-radius: 4px; }
+        .other .bubble { background: var(--ios-elevated); color: white; border-bottom-left-radius: 4px; }
+        
+        .msg-meta { font-size: 11px; color: var(--ios-text-secondary); margin-top: 2px; padding: 0 4px; display: flex; gap: 4px; }
+        .me .msg-meta { color: rgba(255,255,255,0.6); }
+
+        /* Composer */
+        .composer {
+            padding: 8px 16px calc(8px + var(--safe-bottom)) 16px;
+            background: var(--ios-surface);
+            border-top: 0.5px solid var(--ios-border);
+            display: flex; align-items: flex-end; gap: 10px;
+        }
+        .composer-input {
+            flex: 1; background: var(--ios-elevated);
+            border-radius: 18px; padding: 10px 14px;
+            max-height: 120px; min-height: 38px;
+            font-size: 16px;
+        }
+        .send-btn {
+            width: 32px; height: 32px; border-radius: 50%;
+            background: var(--ios-blue); color: white;
+            display: flex; align-items: center; justify-content: center;
+            font-size: 16px; flex-shrink: 0;
+        }
+        .attach-btn { font-size: 24px; color: var(--ios-text-secondary); padding: 4px; }
+
+        /* Toasts */
+        .toast {
+            position: fixed; top: calc(20px + var(--safe-top)); left: 50%; transform: translateX(-50%);
+            background: rgba(50,50,50,0.9); backdrop-filter: blur(10px);
+            color: white; padding: 12px 20px; border-radius: 20px;
+            font-size: 14px; z-index: 9999;
+            box-shadow: 0 4px 12px rgba(0,0,0,0.3);
+            animation: fadeIn 0.3s;
+        }
+    </style>
+</head>
+<body>
+
+<div id="app-container">
+    <!-- ЭКРАН АВТОРИЗАЦИИ -->
+    <div id="auth-screen" class="screen active animate-fade">
+        <div class="auth-logo">
+            <h1>KZ Messenger</h1>
+            <p>Внутренний корпоративный связь</p>
+        </div>
+        
+        <form id="login-form" onsubmit="handleLogin(event)">
+            <div class="input-group">
+                <input type="text" class="ios-input" placeholder="Табельный номер (KZ-...)" required autocomplete="off">
+            </div>
+            <div class="input-group">
+                <input type="password" class="ios-input" placeholder="Пароль" required>
+            </div>
+            <button type="submit" class="btn-primary">Войти</button>
+            <a href="#" class="btn-link" onclick="showRegister(event)">Нет аккаунта? Зарегистрироваться</a>
+        </form>
+
+        <form id="register-form" class="hidden" onsubmit="handleRegister(event)">
+             <div class="input-group"><input type="text" class="ios-input" id="reg-name" placeholder="ФИО" required></div>
+             <div class="input-group"><input type="text" class="ios-input" id="reg-badge" placeholder="Табельный номер" required></div>
+             <div class="input-group"><input type="password" class="ios-input" id="reg-pass" placeholder="Пароль" required></div>
+             <button type="submit" class="btn-primary">Создать аккаунт</button>
+             <a href="#" class="btn-link" onclick="showLogin(event)">Уже есть аккаунт? Войти</a>
+        </form>
+    </div>
+
+    <!-- ГЛАВНЫЙ ЭКРАН (СПИСОК ЧАТОВ) -->
+    <div id="main-screen" class="screen">
+        <div class="nav-header">
+            <div class="nav-title">Чаты</div>
+            <button class="icon-btn" onclick="openSettings()">⚙️</button>
+        </div>
+        
+        <div class="scroll-area" id="chat-list-container">
+            <!-- Сюда рендерятся чаты -->
+        </div>
+    </div>
+
+    <!-- ЭКРАН ЧАТА (НАД СПИСКОМ) -->
+    <div id="chat-view" class="screen">
+        <div class="nav-header">
+            <button class="back-btn" onclick="closeChat()">
+                <span class="back-arrow">‹</span> Назад
+            </button>
+            <div style="position:absolute; left:50%; transform:translateX(-50%); text-align:center;">
+                <div class="nav-title" id="chat-header-name">Имя</div>
+                <div class="text-xs text-gray" id="chat-header-status">Статус</div>
+            </div>
+            <div style="width: 60px;"></div> <!-- Балансировщик для центрирования -->
+        </div>
+
+        <div class="scroll-area messages-list" id="messages-container">
+            <!-- Сообщения -->
+        </div>
+
+        <div class="composer">
+            <button class="attach-btn" onclick="document.getElementById('file-input').click()">📎</button>
+            <input type="file" id="file-input" class="hidden" onchange="handleFile(this)">
+            <textarea class="composer-input" id="message-input" placeholder="Сообщение..." rows="1"></textarea>
+            <button class="send-btn" onclick="sendMessage()">➤</button>
+        </div>
+    </div>
+</div>
+
+<script>
+// ============================================================
+// KZ MESSENGER MOBILE CORE
+// ============================================================
+
+const DB_KEY = 'kz_mobile_db_v1';
+let db = {};
+let currentUser = null;
+let currentChatId = null;
+
+// --- INITIALIZATION ---
+window.addEventListener('DOMContentLoaded', () => {
+    loadData();
+    if (!seedData()) {
+        // Если данных нет, создаем демо
+    }
+    
+    // Проверяем сессию
+    const savedUser = localStorage.getItem('kz_session_user');
+    if (savedUser) {
+        currentUser = JSON.parse(savedUser);
+        showApp();
+    } else {
+        showAuth();
+    }
+
+    setupSW();
+});
+
+function loadData() {
+    try { db = JSON.parse(localStorage.getItem(DB_KEY)) || { users:{}, chats:{}, msgs:{} }; } 
+    catch(e) { db = { users:{}, chats:{}, msgs:{} }; }
+}
+function saveData() { localStorage.setItem(DB_KEY, JSON.stringify(db)); }
+
+function seedData() {
+    if (Object.keys(db.users).length > 0) return false;
+    // Демо пользователи
+    db.users['u1'] = { id:'u1', name:'Администратор', badge:'KZ-001', role:'admin' };
+    db.users['u2'] = { id:'u2', name:'Иван Петров', badge:'KZ-002', role:'employee' };
+    db.channels = [
+        { id:'ch_all', name:'Общий канал', type:'channel' },
+        { id:'ch_it', name:'IT Поддержка', type:'channel' }
+    ];
+    db.msgs['ch_all'] = [{ id:'m1', from:'u1', text:'Добро пожаловать в KZ Messenger!', ts: Date.now() }];
+    saveData();
+    return true;
+}
+
+// --- NAVIGATION ---
+function showAuth() {
+    document.getElementById('auth-screen').classList.add('active');
+    document.getElementById('main-screen').classList.remove('active');
+    document.getElementById('chat-view').classList.remove('open');
+}
+function showApp() {
+    document.getElementById('auth-screen').classList.remove('active');
+    document.getElementById('main-screen').classList.add('active');
+    renderChatList();
+}
+function openChat(chatId) {
+    currentChatId = chatId;
+    document.getElementById('chat-view').classList.add('open');
+    renderMessages();
+    markAsRead(chatId);
+}
+function closeChat() {
+    document.getElementById('chat-view').classList.remove('open');
+    currentChatId = null;
+    renderChatList(); // Обновить бейджи
+}
+
+// --- AUTH LOGIC ---
+function showLogin(e) { e.preventDefault(); toggleForms(false); }
+function showRegister(e) { e.preventDefault(); toggleForms(true); }
+function toggleForms(isReg) {
+    document.getElementById('login-form').classList.toggle('hidden', isReg);
+    document.getElementById('register-form').classList.toggle('hidden', !isReg);
+}
+
+function handleLogin(e) {
+    e.preventDefault();
+    const inputs = e.target.querySelectorAll('input');
+    const badge = inputs[0].value.toUpperCase();
+    const pass = inputs[1].value; // В реальном приложении проверка хеша
+    
+    // Демо логика: любой табельный с паролем "demo" или существующий юзер
+    let user = Object.values(db.users).find(u => u.badge === badge);
+    
+    if (!user && badge.startsWith('KZ-')) {
+        // Автосоздание для демо
+        user = { id: 'u_'+Date.now(), name: 'Пользователь '+badge, badge: badge, role: 'employee' };
+        db.users[user.id] = user;
+        saveData();
+    }
+
+    if (user) {
+        currentUser = user;
+        localStorage.setItem('kz_session_user', JSON.stringify(user));
+        showApp();
+        showToast('Вход выполнен');
+    } else {
+        alert('Неверный табельный номер');
+    }
+}
+
+function handleRegister(e) {
+    e.preventDefault();
+    const name = document.getElementById('reg-name').value;
+    const badge = document.getElementById('reg-badge').value.toUpperCase();
+    const id = 'u_' + Date.now();
+    
+    if (Object.values(db.users).some(u => u.badge === badge)) {
+        alert('Номер занят'); return;
+    }
+
+    db.users[id] = { id, name, badge, role: 'employee' };
+    saveData();
+    showToast('Аккаунт создан. Войдите.');
+    toggleForms(false);
+}
+
+// --- RENDERING ---
+function renderChatList() {
+    const container = document.getElementById('chat-list-container');
+    container.innerHTML = '';
+    
+    // Смесь каналов и личных чатов (упрощенно для демо)
+    const items = [...db.channels]; 
+    
+    // Добавляем личные чаты, если они есть
+    Object.values(db.chats).forEach(c => {
+        if(c.participants.includes(currentUser.id)) items.push(c);
+    });
+
+    items.forEach(item => {
+        const unread = getUnreadCount(item.id);
+        const lastMsg = getLastMessage(item.id);
+        
+        const el = document.createElement('div');
+        el.className = 'chat-item';
+        el.onclick = () => openChat(item.id);
+        
+        let avatarContent = item.name.substring(0,2).toUpperCase();
+        let avatarClass = item.type === 'channel' ? 'avatar channel' : 'avatar';
+        let bgColor = stringToColor(item.id);
+
+        el.innerHTML = `
+            <div class="${avatarClass}" style="background:${bgColor}">${avatarContent}</div>
+            <div class="chat-info">
+                <div class="chat-name-row">
+                    <span class="chat-name">${item.name}</span>
+                    <span class="chat-time">${lastMsg ? formatTime(lastMsg.ts) : ''}</span>
+                </div>
+                <div class="chat-preview">${lastMsg ? escapeHtml(lastMsg.text) : 'Нет сообщений'}</div>
+            </div>
+            ${unread > 0 ? `<div class="badge">${unread}</div>` : ''}
+        `;
+        container.appendChild(el);
+    });
+}
+
+function renderMessages() {
+    const container = document.getElementById('messages-container');
+    const headerName = document.getElementById('chat-header-name');
+    const headerStatus = document.getElementById('chat-header-status');
+    
+    const chat = db.channels.find(c=>c.id===currentChatId) || db.chats[currentChatId];
+    headerName.textContent = chat ? chat.name : 'Чат';
+    headerStatus.textContent = chat?.type === 'channel' ? 'Канал' : 'Личный чат';
+
+    container.innerHTML = '';
+    const msgs = db.msgs[currentChatId] || [];
+    
+    msgs.forEach(m => {
+        const isMe = m.from === currentUser.id;
+        const div = document.createElement('div');
+        div.className = `msg-wrapper ${isMe ? 'me' : 'other'}`;
+        div.innerHTML = `
+            <div class="bubble">${escapeHtml(m.text)}</div>
+            <div class="msg-meta">${formatTime(m.ts)} ${isMe ? '✓✓' : ''}</div>
+        `;
+        container.appendChild(div);
+    });
+    
+    // Scroll to bottom
+    setTimeout(() => container.scrollTop = container.scrollHeight, 50);
+}
+
+// --- ACTIONS ---
+function sendMessage() {
+    const input = document.getElementById('message-input');
+    const text = input.value.trim();
+    if (!text || !currentChatId) return;
+
+    const msg = { id: 'm_'+Date.now(), from: currentUser.id, text, ts: Date.now() };
+    if (!db.msgs[currentChatId]) db.msgs[currentChatId] = [];
+    db.msgs[currentChatId].push(msg);
+    saveData();
+    
+    input.value = '';
+    renderMessages();
+    
+    // Broadcast to other tabs (Realtime simulation)
+    broadcast({ type: 'new_msg', chatId: currentChatId, msg });
+}
+
+function handleFile(input) {
+    if(input.files[0]) showToast("Файлы пока не поддерживаются в демо-режиме");
+}
+
+function markAsRead(chatId) {
+    // Логика чтения
+}
+function getUnreadCount(chatId) { return 0; } // Заглушка
+function getLastMessage(chatId) { 
+    const m = db.msgs[chatId]; 
+    return m && m.length ? m[m.length-1] : null; 
+}
+
+// --- UTILS ---
+function formatTime(ts) {
+    const d = new Date(ts);
+    const now = new Date();
+    if (d.toDateString() === now.toDateString()) {
+        return d.toLocaleTimeString([], {hour:'2-digit', minute:'2-digit'});
+    }
+    return d.toLocaleDateString([], {day:'numeric', month:'short'});
+}
+function escapeHtml(t) { return t.replace(/&/g,"&amp;").replace(/</g,"&lt;").replace(/>/g,"&gt;"); }
+function stringToColor(str) {
+    let hash = 0;
+    for (let i = 0; i < str.length; i++) hash = str.charCodeAt(i) + ((hash << 5) - hash);
+    const c = (hash & 0x00FFFFFF).toString(16).toUpperCase();
+    return "#" + "00000".substring(0, 6 - c.length) + c;
+}
+function showToast(msg) {
+    const t = document.createElement('div');
+    t.className = 'toast';
+    t.textContent = msg;
+    document.body.appendChild(t);
+    setTimeout(() => t.remove(), 3000);
+}
+function openSettings() {
+    if(confirm("Выйти из аккаунта?")) {
+        localStorage.removeItem('kz_session_user');
+        location.reload();
+    }
+}
+
+// --- REALTIME (BroadcastChannel) ---
+let bc;
+try { bc = new BroadcastChannel('kz_messenger_bus'); } catch(e){}
+if(bc) bc.onmessage = (e) => {
+    if(e.data.type === 'new_msg') {
+        if(!db.msgs[e.data.chatId]) db.msgs[e.data.chatId]=[];
+        db.msgs[e.data.chatId].push(e.data.msg);
+        saveData();
+        if(currentChatId === e.data.chatId) renderMessages();
+        else renderChatList();
+    }
+};
+function broadcast(data) { if(bc) bc.postMessage(data); }
+
+// --- SERVICE WORKER (PUSH) ---
+async function setupSW() {
+    if ('serviceWorker' in navigator) {
+        try {
+            const reg = await navigator.serviceWorker.register('./sw.js');
+            console.log('SW Registered');
+            
+            // Request Permission for iOS Push (Requires HTTPS & PWA installed)
+            if ('Notification' in window && Notification.permission === 'default') {
+                Notification.requestPermission().then(p => {
+                    if(p === 'granted') subscribePush(reg);
+                });
+            } else if (Notification.permission === 'granted') {
+                subscribePush(reg);
+            }
+        } catch (err) { console.error(err); }
+    }
+}
+async function subscribePush(reg) {
+    // Требует VAPID ключ с сервера. Для локального теста пропускаем отправку на сервер.
+    // В проде тут fetch('/api/push/subscribe')
+    console.log("Ready for Push Subscriptions");
+}
+
+</script>
+</body>
+</html>
