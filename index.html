@@ -1,0 +1,1108 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no,viewport-fit=cover">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="theme-color" content="#0a192f">
+<title>KZ Messenger | Коломенский завод</title>
+<link rel="manifest" href="./manifest.json">
+<link rel="apple-touch-icon" href="/icon.png">
+<style>
+/* ===== ДИЗАЙН СИСТЕМА iOS NATIVE v8.0 ===== */
+:root {
+    --brand-dark:#0a192f;--brand-blue:#0057b8;--brand-light:#e6f0ff;
+    --bg-main:#ffffff;--bg-surface:#f2f2f7;--bg-elevated:#ffffff;
+    --text-primary:#1c1e21;--text-secondary:#8e8e93;--border-color:#dcdfe6;
+    --success:#34c759;--warning:#ff9500;--danger:#ff3b30;
+    --safe-t:env(safe-area-inset-top,0px);--safe-b:env(safe-area-inset-bottom,0px);
+}
+[data-theme="dark"]{
+    --bg-main:#000000;--bg-surface:#1c1c1e;--bg-elevated:#2c2c2e;
+    --text-primary:#ffffff;--text-secondary:#98989f;--border-color:#38383a;--brand-light:#1a3a5c;
+}
+*{box-sizing:border-box;margin:0;padding:0;-webkit-tap-highlight-color:transparent}
+body{font-family:-apple-system,BlinkMacSystemFont,"SF Pro Text",sans-serif;background:var(--bg-main);color:var(--text-primary);height:100dvh;overflow:hidden;overscroll-behavior:none}
+button{cursor:pointer;border:0;background:0;color:inherit;font:inherit;outline:0;touch-action:manipulation}
+input,textarea,select{font:inherit;border:0;background:0;width:100%;outline:0;-webkit-appearance:none}
+::-webkit-scrollbar{display:none}.hidden{display:none!important}
+
+#app-root{position:relative;width:100%;height:100%}
+.screen-stack{position:absolute;inset:0;display:flex;flex-direction:column;background:var(--bg-main);transform:translateX(100%);opacity:0;pointer-events:none;transition:transform .3s cubic-bezier(.32,.72,0,1),opacity .3s;z-index:1}
+.screen-stack.active{transform:translateX(0);opacity:1;pointer-events:auto;z-index:10}
+
+.login-screen{justify-content:center;align-items:center;background:linear-gradient(160deg,#0a192f 0%,#0057b8 100%);padding:20px calc(20px + var(--safe-r)) calc(20px + var(--safe-b))}
+.login-card{background:rgba(255,255,255,.1);backdrop-filter:blur(20px);border:1px solid rgba(255,255,255,.2);border-radius:20px;padding:24px;width:100%;max-width:380px}
+.login-input{background:rgba(255,255,255,.15);border:1px solid rgba(255,255,255,.3);border-radius:12px;padding:14px;color:white;margin-bottom:12px;font-size:16px}
+.login-input::placeholder{color:rgba(255,255,255,.5)}
+.login-btn{width:100%;padding:16px;background:white;color:var(--brand-dark);border-radius:12px;font-weight:700;margin-top:8px}
+.login-error{background:rgba(255,59,48,.2);color:#ffb3b0;padding:10px;border-radius:8px;font-size:13px;margin-bottom:12px;text-align:center;display:none}
+
+.home-header{padding:calc(12px + var(--safe-t)) 16px 12px;border-bottom:1px solid var(--border-color);display:flex;justify-content:space-between;align-items:center}
+.home-title{font-size:28px;font-weight:700}
+.search-field{background:var(--bg-surface);border-radius:12px;padding:10px 14px;margin:0 16px 12px;display:flex;gap:8px}
+.scroll-area{flex:1;overflow-y:auto;-webkit-overflow-scrolling:touch}
+.tab-bar{display:flex;border-top:1px solid var(--border-color);padding:4px 0 calc(4px + var(--safe-b))}
+.tab-btn{flex:1;display:flex;flex-direction:column;align-items:center;color:var(--text-secondary);font-size:10px;padding:6px 0;position:relative}
+.tab-btn.active{color:var(--brand-blue)}.tab-icon{font-size:22px;margin-bottom:2px}
+.badge-dot{position:absolute;top:4px;right:30%;width:8px;height:8px;background:var(--danger);border-radius:50%}
+
+.list-item{display:flex;align-items:center;gap:12px;padding:12px 16px;border-bottom:1px solid var(--bg-surface);cursor:pointer}
+.avatar{width:50px;height:50px;border-radius:50%;background:var(--brand-blue);color:white;display:flex;align-items:center;justify-content:center;font-weight:600;font-size:18px;flex-shrink:0}
+.item-body{flex:1;min-width:0}.item-name{font-weight:600;font-size:16px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.item-sub{font-size:14px;color:var(--text-secondary);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.empty-view{padding:60px 20px;text-align:center;color:var(--text-secondary)}
+
+.chat-header{padding:calc(10px + var(--safe-t)) 16px 10px;border-bottom:1px solid var(--border-color);display:flex;align-items:center;gap:12px}
+.back-arrow{font-size:28px;color:var(--brand-blue)}
+.msg-list{flex:1;overflow-y:auto;padding:16px;display:flex;flex-direction:column;gap:8px;background:var(--bg-surface);scroll-behavior:smooth}
+.bubble{max-width:75%;padding:10px 14px;border-radius:18px;font-size:16px;line-height:1.4;word-wrap:break-word}
+.bubble.me{align-self:flex-end;background:var(--brand-blue);color:white;border-bottom-right-radius:4px}
+.bubble.other{align-self:flex-start;background:var(--bg-elevated);border-bottom-left-radius:4px;box-shadow:0 1px 3px rgba(0,0,0,.08)}
+.composer{padding:10px 16px calc(10px + var(--safe-b));background:var(--bg-main);border-top:1px solid var(--border-color);display:flex;gap:10px;align-items:flex-end}
+.comp-input{flex:1;background:var(--bg-surface);border-radius:20px;padding:10px 14px;resize:none;max-height:100px}
+.send-btn{width:36px;height:36px;border-radius:50%;background:var(--brand-blue);color:white;display:flex;align-items:center;justify-content:center}
+
+.task-card{margin:0 16px 10px;padding:14px;background:var(--bg-elevated);border:1px solid var(--border-color);border-radius:12px;box-shadow:0 1px 3px rgba(0,0,0,.08)}
+.task-head{display:flex;justify-content:space-between;margin-bottom:6px}
+.status-chip{font-size:10px;padding:2px 8px;border-radius:10px;font-weight:700;text-transform:uppercase}
+.st-new{background:#dbeafe;color:#1e40af}.st-prog{background:#fef3c7;color:#92400e}.st-done{background:#dcfce7;color:#166534}
+.fab{position:fixed;bottom:calc(70px + var(--safe-b));right:20px;width:56px;height:56px;border-radius:50%;background:var(--brand-blue);color:white;font-size:28px;box-shadow:0 4px 12px rgba(0,87,184,.4);z-index:50;display:flex;align-items:center;justify-content:center}
+
+.sheet-overlay{position:fixed;inset:0;background:rgba(0,0,0,.4);z-index:200;display:flex;align-items:flex-end;opacity:0;pointer-events:none;transition:opacity .3s}
+.sheet-overlay.show{opacity:1;pointer-events:auto}
+.sheet-content{background:var(--bg-main);width:100%;max-width:500px;border-radius:20px 20px 0 0;padding:20px 20px calc(20px + var(--safe-b));transform:translateY(100%);transition:transform .3s cubic-bezier(.32,.72,0,1)}
+.sheet-overlay.show .sheet-content{transform:translateY(0)}
+.handle{width:36px;height:5px;background:var(--border-color);border-radius:3px;margin:0 auto 20px}
+.form-group{margin-bottom:16px}.form-label{display:block;font-size:12px;color:var(--text-secondary);margin-bottom:6px;font-weight:600;text-transform:uppercase}
+.form-control{background:var(--bg-surface);border:1px solid var(--border-color);border-radius:12px;padding:12px;font-size:16px;color:var(--text-primary);width:100%}
+.btn-primary{width:1# Этап 1. Безопасность и данные
+
+## Что меняем
+| Было | Стало | Зачем |
+|------|-------|-------|
+| `btoa(pass)` (Base64, обратимо) | SHA-256 + случайная соль (необратимо) | Пароли нельзя восстановить из базы |
+| Пароль хранится в `localStorage` сессии | В сессии только `{id, name, dept, badge, role}`, без пароля | Даже при утечке localStorage пароль не украдут |
+| Вход без пароля (если поле пустое) | Жёсткая проверка длины ≥6 символов | Защита от брутфорса слабых аккаунтов |
+| Одно сообщение об ошибке «Не найдено» / «Неверный пароль» | Единое: **«Неверный табельный номер или пароль»** | Не раскрываем, существует ли такой сотрудник |
+| `innerHTML` с шаблонными строками для00%;padding списков | Гибрид: структурные теги через `innerHTML`, **все данные** через `textContent`/`esc()` | Полная защита от XSS |
+| Файлы загружаются без ограничений | Проверка MIME + расширение + размер ≤10 М:14px;background:var(--brand-blue);color:white;border-radius:12pxБ | Блокировка `.exe/.sh`, переполнения Storage |
+| Старые пользователи с;font-weight:600;margin-top:10px}
+
+.toast{position:fixed;top:calc(20px + var(--safe-t));left:5 `passHash = btoa(...)` | Авто-миграция при первом успешном входе | Данные не теряются |
+
+---
+
+## Полный код `index.html` (v8.0 Security)0%;transform:translateX(-50%) translateY(-100px);background:var(--brand-dark);color:white;padding:12px 20px;border-radius:20px;font-size:14px;z-index:9999;transition:transform .3s}
+
+Скопируй целиком,
+.toast.show{transform:translateX(-50%) translateY(0)} замени свой текущий файл.
+
+```html
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no
+</style>
+
+<script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-app-compat.js"></script>
+<script src="https://www.gstatic.com/firebase,viewport-fit=cover">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+js/10.12.0/firebase-firestore-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-storage-compat.js"></script>
+</head>
+<body>
+
+<div id="app-root">
+    
+    <div class="screen<meta name="theme-color" content="#0a192f">
+<title>KZ Messenger | Коломенский завод</title>
+<link rel="manifest" href="./manifest.json">
+<link rel="apple-touch-icon" href="/icon.png">
+<style>
+/* ===== ДИЗАЙН СИСТЕМА iOS-stack login-screen active" id="scrLogin">
+        <div style="text-align:center;color:white;margin-bottom:30px;">
+            <h1 style="font-size: NATIVE v8.0 ===== */
+:root {
+    --brand-dark:#0a192f;--brand-blue:#0057b8;48px;font-weight:800;">--brand-light:#KZ</h1>
+            <p style="opacity:.8">Коломенский завод • Мессенджер</p>
+       e6f0ff;
+    --bg-main:#ffffff;--bg-surface:#f2f2f7;--bg-e </div>
+levated:#ffffff;
+    --text-primary:#1c1e        
+        <div class="login-card" id="cardLogin">
+           21;-- <div class="text-secondary:#8e8e9login-error" id3;--="errLogin"></div>
+            <form onsubmitborder-color:#dcdfe6;
+    --success:#34c759;="doLogin(event--warning:#ff9500;--danger:#ff3b30;
+    --safe-t)" autocomplete="on">
+                <input type="text":env(safe class="login-input-area-inset-top,0px);--safe-b:env(safe-area-inset-bottom,0px);
+" placeholder="Табельный номер (KZ-XXXX)" id="}inpBadge" required autocomplete="username">
+                <
+[data-theme="dark"]input type="password{
+    --bg-main" class="login-input" placeholder="Пароль" id="inp:#000Pass" required minlength="6" autocomplete="current-password">
+                <button type="submit" class="login-btn" id="btn000;--bg-surface:#1c1c1e;--bg-elevated:#2cDo2c2e;
+    --text-primary:#ffffff;--text-secondary:#98989Login">ВОЙТИ</button>
+            </form>
+           f;--border <div style="-color:#38383a;--brand-light:#1a3a5c;
+}
+*{box-sizing:border-box;margin:0;padding:0;-webkit-tap-highlight-color:text-align:center;color:rgba(255,255,255,.7);margin-top:16px;font-size:14px;cursor:pointer;" onclicktransparent}
+body{font-family:-apple-system,BlinkMacSystemFont,"SF Pro Text",sans-serif;background:var(--bg-main);color:var(--text-primary);height:100dvh;overflow:hidden;overscroll-behavior:none}
+button{cursor:pointer;border:0;background:0;color:inherit;font:inherit;outline:0;touch-action:manipulation}
+input,textarea,select{font:inherit;border:0;background:0;width:100%;outline:0;-webkit-appearance:none}
+::-webkit-scrollbar{display:none}.hidden{display:none!important}
+
+#app-root{position:relative;width:100%;height:100%}
+.screen-stack{position:absolute;inset:0;display:flex;flex-direction:column;background:var(--bg-main);transform:translateX(100%);opacity:0;pointer-events:none;transition:transform .3s cubic-bezier(.32,.72,0,1),opacity .3s;z-index:1}
+.screen-stack.active{transform:translateX(0);opacity:1;pointer-events:auto;z-index:10}
+
+.login-screen{justify-content:center;align-items:center;background:linear-gradient(160deg,#0a192f 0%,#0057b8 100%);padding:20px calc(20px + var(--safe-r)) calc(20px + var(--safe-b))}
+.login-card{background:rgba(255,255,="toggleAuthMode()">
+                Нет аккаунта? <span style="color:white;text-decoration:underline;">Регистрация</span>
+            </div>
+        </div>
+
+        <div class="login-card hidden" id="cardReg">
+            <div class="login-error" id="errReg"></div>
+            <form onsubmit="doRegister(event)">
+                <input type="text" class="login-input" placeholder="ФИО" id="regName" required maxlength="100">
+                <input type="text" class="login-input" placeholder="Подразделение" id="regDept" required maxlength="50">
+                <input type="text" class="login-input" placeholder="Табельный номер" id="regBadge" required pattern="[A-Za-z]{1,3}-?\d+" title="Например: KZ-00100">
+                <input type="password" class="login-input" placeholder="Пароль (мин 6 символов)" id="regPass" required minlength="6" autocomplete="new-password">
+                <button type="submit" class="login-btn" id="btnDoReg">СОЗДАТЬ АККАУНТ</button>
+            </form>
+            <div style="text-align:center;color:rgba(255,255,255,.7);margin-top:16px;font-size:14px;cursor:pointer;" onclick255,.1);backdrop-filter:blur(20px);border:1px="toggleAuthMode()">
+                ← Назад ко входу
+            </div>
+        </div>
+    </div>
+
+    <div class="screen-stack" id="scrHome">
+        <div class="home-header">
+            <div class solid rgba(255,255,255,.2);border-radius:20px;padding:24px;width:100%;max-width:380px}
+.login-input{background:rgba(255,255,255,.15);border:1px solid rgba(255,255,255,.3);border-radius:12px;padding:14px;color:white;margin-bottom:12px;font-size:16px}
+.login-input::placeholder{color:rgba(255,255,255,.5)}
+.login-btn{width:="home-title" id="lblTitle">Чаты</div>
+            <div style="display:flex;gap:16px;">
+                <button onclick="openMyProfile()" aria-label="Мой профиль" style="font-size:20px;">👤</button>
+                <button onclick="toggleTheme()" aria-label="Переключить тему" style="font-size:20px;">🌙</button>
+                <button onclick="logout()" style="color:var(--danger);font-size:14px;font-weight:600;">Выйти</button>
+            </div>
+        </div>
+        <div class="search-field100%;padding:16px;background:white;color:var(--brand-dark">
+            <span aria-hidden="true">);border-radius:12px;font-weight:700;margin-top:8px}
+.login-error🔍</span>
+            <input type="text" placeholder="Поиск..."{background:rgba(255,59,48,. id="inpSearch" oninput="2);color:#ffb3b0;padding:10px;border-radius:renderCurrentTab()"8px;font-size aria-label="По:13px;margin-bottom:12px;text-align:center;display:none}
+
+.homeиск по контак-header{padding:calc(12px + var(--safe-t))там и чатам">
+        </div>
+ 16px        <div class 12px;border-bottom:1="scroll-area" id="mainList" role="list"></div>
+        <div class="tab-bar"px solid var(--border-color); role="tablist">
+           display:flex;justify <button class="tab-btn active" onclick="switchTab-content:space-between;align-items:center}
+.home-title('chats',{font-size: this)" role28px;font="tab" aria-selected="true">-weight:70💬<0}
+.search-field{br>Чатыbackground:var(--<span class="badgebg-surface);border-radius:12px;padding:10px 14px;margin:0 16px 12px;display:flex;gap:8px}
+.scroll-dot hidden" id="dotChats"></span></button>
+            <button class="tab-btn" onclick="switchTab('contacts', this)"-area{flex:1;overflow-y role="tab">👥<br>Контакты</button>
+            <button class="tab-btn" onclick="switchTab('tasks', this)" role="tab">✅<br>Задачи<span class="badge-dot hidden" id:auto;-webkit-overflow-scrolling:touch}
+.tab-bar{display:flex;border-top:1px solid var(--="dotTasks"></span></button>
+        </div>
+        <button class="fab hidden"border-color); id="btnpadding:4pxFab" onclick 0 calc="openTaskSheet(4px + var(--safe-b))}
+.tab-btn{flex()" aria-label=":1;display:flex;flex-direction:column;align-items:center;color:var(--textНовая задача">+</button>
+    </div>
+
+    <div class="screen-stack" id="scrChat">
+        <div class="chat-header">
+            <button class="back-arrow"-secondary);font-size:10px;padding:6px 0;position:relative}
+.tab-btn.active{color:var(--brand-blue)}.tab-icon{font-size:2 onclick="closeChat2px;margin-bottom:2px}
+.badge-dot{position:absolute;top:()" aria-label="4px;right:30%;width:8px;height:8px;background:var(--danger);border-radius:50%}
+
+.list-item{display:flex;Назад">‹</button>
+            <div class="avatar" stylealign-items:center;="width:36px;height:gap:136px;font-size:14px;" id="hdrAvatar">?</div>
+            <div style="flex:1;">
+                <div style="font-weight:6002px;padding:;font-size:12px 16px;border-bottom:1px16px;" solid var(--bg id="hdr-surface);cursor:pointer}
+.avatar{width:50px;height:50px;border-radius:50%;background:var(--brand-blue);color:white;display:flex;align-items:center;justify-content:center;font-weight:600;font-size:18Name">...</px;flex-shdiv>
+                <div style="font-size:12px;colorrink:0}
+.item-body{flex:1;min-width:0:var(--success}.);" id="hdrStatus">В сети</div>
+            </div>
+        </divitem-name{font-weight:60>
+        <0;font-size:div class="msg-list" id="msgContainer" role="log" aria-live="polite"></div>
+        <div16px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis} class="composer">
+            <label style="font-size:24px;color:var(--text-secondary);padding:4px;" aria-label="Прикрепить файл">📎<input type="file" id="fileInput" class="hidden" onchange="
+.item-sub{font-size:14px;color:var(--text-secondary);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.empty-view{padding:60px 20px;text-align:center;color:sendFile(this)" accept="image/*,application/pdf,text/plain,application/msword,application/vnd.openxmlformats-officedocument.wordprocessingml.document"></label>
+var(--text-secondary)}
+
+.chat-header{padding:calc(10px + var(--safe-t)) 16px             <textarea class10px;border-bottom:1px solid var(--border="comp-input"-color); id="msgInputdisplay:flex;align-items:center;gap:12px}
+.back-arrow{font-size:" rows="128px;color:var(--brand-blue)}
+.msg-list{flex:1;overflow-y:auto;padding:16px;display:flex;flex-direction" placeholder="Сообщение..." onkeydown="handleKey(event)" aria-label="По:column;gapле ввода сообщения"></:8px;background:var(--bg-surface);scroll-behavior:smooth}
+.btextarea>
+            <button class="send-btn" onclick="sendMessage()" aria-label="Отправить">➤ubble{max-width:75%;padding:10px 14px;border-radius:</button>
+18px;font-size:16px;line-height:        </div>
+    </div>
+
+</div>
+
+<div class="sheet-overlay1.4;word-wrap:break" id="taskSheet" onclick="if(event.target===this)this.classList.remove-word}
+.bubble.me{align-self:flex-end;background('show')">
+    <div class="sheet-content">
+        <div class="handle"></div>
+        <h3 style="margin-bottom:20px;">Новая задача</h3>
+        <form on:var(--brand-blue);color:whitesubmit="create;border-bottom-right-radius:4px}
+.bubble.otherTask(event)">
+{align-self:flex            <div class="form-group"><label class="form-start;background:var(--bg-elevated);border-bottom-left-radius:4-label">Заголоpx;box-shadow:0 1px 3вок</label><input type="text" class="formpx rgba(0-control" id=",0,0,.08)}
+.comtkTitle" requiredposer{padding:10px  maxlength="200"></div16px calc(10px>
+            + var(--safe-b));background:var(--bg-main);border-top:1px solid var(--border-color);display:flex;gap:10px;align-items:flex <div class="form-group"><label class="form-label">Описание</label><textarea class="form-control" id="tkDesc" rows="3" maxlength="2-end}
+.comp000"></textarea></div>
+            <div class="form-group"><label class="form-label-input{flex:1;background:var">Исполнитель(--bg-surface);border-radius:20px;padding:10px 14px;resize:none;max-height:100px}
+.send-btn{width:36px;height:36px;border-radius:50%;background:var(--brand-blue);color:white;display:flex</label><select class="form-control" id="tkAssignee" required></select></div>
+            <button type="submit" class="btn-primary">Создать</button>;align-items:center
+        </form>
+    </div>
+</div>
+
+<div class="sheet;justify-content:center}
+
+.task-card{margin:0 -overlay" id="16px 10px;paddingprofSheet" onclick="if(event.target===this)this.classList.remove('show')">
+    <div class="sheet-content" style="text-align:center;">
+        <div class="handle"></div>
+        <div class="avatar" style="width:7:14px;background:var(--bg-elevated);border:1px solid var(--border-color);border-radius:12px;box-shadow:0 1px 3px rgba(0,0,0,.08)}
+.task-head{display:flex;justify-content:space-between;margin-bottom:6px}
+.status-chip{font-size:10px;padding:2px 8px;border-radius:10px;font-weight:700;text-transform:uppercase}
+.st-new{background:#dbeafe;color:#1e40af}.st-prog{background:#fef3c7;color:#92400e}.st-done{background:#dcfce7;color:#166534}
+.fab{position:fixed;bottom:calc(70px + var(--safe-b));0px;height:70px;font-size:28px;margin:0 auto 12px;" id="pfAvatar">??</div>
+        <h2 style="font-size:20px;margin-bottom:4px;" id="pfName">Имя</h2>
+        <p style="color:var(--text-secondary);font-size:14px;margin-bottom:20px;" id="pfRole">Должность</p>
+        <div style="background:var(--bg-surface);border-radius:12px;padding:16px;text-align:left;margin-bottom:20px;">
+            <div style="display:flex;justify-content:space-between;margin-bottom:8px;"><span style="color:var(--text-secondary)">Отдел:</span><span id="pfDept">-</span></div>
+            <right:20px;width:56px;height:56px;border-radius:50%;background:var(--brand-blue);color:white;font-size:28px;box-shadow:0 4px 12px rgba(0,87,184,.4);z-index:50;display:flex;align-items:center;justify-content:center}
+
+.sheet-overlay{position:fixed;inset:0;background:rgba(0,0,0,.4);z-index:200;display:flex;align-items:flex-end;opacity:0;pointer-events:none;transition:opacity .3s}
+.sheet-overlay.show{opacity:1;pointer-events:auto}
+.sheet-content{background:var(--bg-main);width:100%;max-width:500px;border-radius:20px 20px 0 0;padding:20px 20px calc(20px + var(--safe-b));transform:translateY(100div style="display:flex;justify-content:space-between;"><span style="color:var(--text-secondary)">Номер:</span><span id="pfBadge">-</span></div>
+        </div>
+        <button class="btn-primary" id="btnPfAction" onclick="startDMFromProfile()">Написать сообщение</button>
+    </div>
+</div>
+
+<div class="toast" id="toastEl" role="status" aria-live="polite"></div>
+
+<script>
+// ============================================================
+// CORE ENGINE v8.0 — SECURITY HARDENED
+// ============================================================
+
+const CONFIG = {
+    apiKey:"AIzaSyDyuK9iREDYiA-NmjeWgECT2np57V-m86s",
+    authDomain:"kz-messenger-test.firebaseapp.com",
+   %);transition:transform .3s cubic-bezier(.32,.7 projectId:"kz2,0,-messenger-test",1)}
+.sheet
+   -overlay.show .sheet-content{transform: storageBucket:"kz-messenger-test.firebasestorage.app",
+    messagingSenderId:"60956478899",
+    appId:"1translateY(0)}
+.handle{width:36px;height:5px;background:var(--border-color);border-radius:3px;margin:0 auto 20px}
+.form-group{margin:60956478899:web:4-bottom:163fbbc9d9755e967b68px}.form-labelfc6"
+};
+
+let db, storage, user{display:block;font-size:12px;color:var(--text-secondary);=null;
+let usersCache={}, chatsCache=[], tasksCache=[];
+margin-bottom:6px;font-weight:600;text-transform:uppercase}let currentTab='chats', activeChatId=null;
+let unsub
+.form-control{background:var(--bg-surface);border:1px solid var(--border-color);border-radius:12px;padding:12px;font-size:scribers={};
+let pendingUserId=null;
+
+// === CRYPTO HELPERS (SHA-25616px;color:var(--text-primary);width:100%}
+.btn-primary{width:100%;padding:14px;background:var(--brand-blue);color:white;border-radius:12px;font-weight:600;margin-top:10 + Salt) ===
+async function sha256Hex(str){
+    const buf=new TextEncoder().encode(str);
+    const hash=await crypto.subtle.digest('SHA-256',buf);
+    return Array.from(new Uint8Array(hashpx}
+
+.toast{position:fixed;top:calc(20px + var(--safe-t));left:50%;transform:translateX(-50%) translateY(-100px);background:var(--brand-dark);color:white;padding:12px 20px;border-radius:20px;font-size:)).map(b=>b.toString(16).padStart(2,'0')).join('');
+}
+function genSalt(len=16){14px;z-index:9999;
+    const arr=new Uint8Array(len);
+    crypto.getRandomValues(arr);
+    return Array.from(arr).map(b=>b.toString(16).padStart(2,'0transition:transform .3s}
+.toast.show{transform:translateX(-50%) translateY(0)}')).join('');
+}
+async function hashPassword(password
+</style>
+
+<script src="https://www.gstatic.com/firebasejs/1,s0.12.0/firebase-appalt){
+   -compat.js"></ // iterscript>
+<scriptated src="https:// SHAwww.gstatic.com/firebase-256js/10.12. (лёгкий PB0/firebase-firestoreKDF substitute без внешних библиотек)
+    let h=s-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-storage-compat.js"></script>
+</head>
+<body>
+
+<div id="app-root">
+    
+    <div class="screen-stack login-screen active" id="scrLogin">
+        <div style="text-align:center;color:white;margin-bottom:30px;">
+            <h1 style="font-size:48px;fontalt+password;
+    for(let i=0;i<1000;i++){h=await sha256Hex(h);}
+    return h;
+}
+// Legacy check для миграции старых btoa-хешей
+function isLegacyBtoa(stored,plain){return-weight:800;">KZ</h1>
+            <p style="opacity:.8">Коломенский завод • Мессенджер</p>
+        </div>
+ stored===        
+        <div class="login-card" id="cardbtoa(plain);}
+
+//Login">
+            === INIT ===
+window.onload=async()=>{
+    try{
+        <div class=" const app=firebase.initializeApp(CONFIG);
+        db=app.firestore();storagelogin-error" id=app.storage();
+        const saved=localStorage="errLogin"></div>
+            <form onsubmit.getItem('kz_user_v8="doLogin(event');
+        if(saved){user=JSON.parse(saved)" autocomplete="on">
+                <input type="text" class="login-input" placeholder="Табельный номер (KZ-XXXX)" id="inpBadge");await initApp();showScreen required autocomplete="username">
+                <input type="password" class="login('scrHome');-input" placeholder="Пароль" id="inpPass" required minlength="6" autocomplete}
+        else showScreen('scrLogin');
+    }catch(e){alert("Ошибка запуска: "+e.message);}
+};="current-password">
+                <button type="submit" class="login-btn" id="btnDoLogin">ВОЙТИ</button>
+            </form
+
+function toggleAuthMode(){
+    document.getElementById('cardLogin').classList.toggle('hidden');>
+           
+    <div style="text-align:center;color document.getElementById('card:rgba(255,255,255,.7);margin-top:16px;font-size:1Reg').classList.toggle('hidden');
+}
+
+// ===4px; LOGIN (с авто-миграцией legacy-паролей) ===
+async function doLogin(e){
+    e.preventDefault();
+    const badge=documentcursor:pointer;" onclick="toggleAuthMode.getElementById('inpBadge').value.toUpperCase().trim();
+    const pass=document.getElementById('inpPass').value;()">
+                Нет аккаунта? <span style="color:white;text
+    const errBox=document.getElementById('errLogin');
+    const btn=document.getElementById('btnDoLogin');
+    errBox.style.display='none';
+
+    if(!badge-decoration:underline;">Регистрация||!pass||</span>
+            </div>
+        </div>
+
+        <div class="login-card hidden" idpass.length<6){
+        errBox.innerText="Введите корректные="cardReg">
+            <div class="login-error" id="errReg"></div>
+            <form onsubmit="doRegister(event)">
+                данные";errBox.style.display='block';return;
+    }
+
+    btn.disabled=true;btn.textContent='...';
+    try{
+        const snap=await db.collection("users <input type="text" class="login-input" placeholder="ФИО" id="").where("badge","==",regName" requiredbadge). maxlength="100">
+                <input typelimit(1).="text" classget();
+        if(snap.empty="login-input) throw" placeholder="Подразделение new Error("auth_fail" id="regDept" required");
+        maxlength="50">
+                const doc <input type="Reftext" class="login-input" placeholder="Табельный номер" id="regBadge" required pattern=snap.docs[0];
+        const data=docRef.data();
+
+        let verified=false;
+        // Новый формат: {salt, hash="[A-Za-z]{1,3}-?\d+" title="Например: KZ-00100">
+                <input type="password" class="login-input" placeholder="Пароль (мин 6 символов)" id="regPass" required minlength="6" autocomplete="new-password">
+                <button type="submit" class="login-btn" id="btnDoReg">СОЗДАТЬ АККАУНТ</button>
+            </form>
+            <div style="}
+        if(data.salt&&data.hash){
+            const computed=await hashPassword(pass,data.salt);
+            verified=(computed===data.hash);
+        }
+        // Старый формат: passHash=btoa(pass) → мигрируем на лету
+        else if(data.passHash&&isLegacyBtoa(datatext-align:center;color.passHash,pass)){
+            verified=true;
+            const newSalt=genSalt();
+            const newHash=await hash:rgba(255,255,255,.7);margin-top:16px;font-size:14px;cursor:pointer;" onclick="toggleAuthMode()">
+                ← Назад ко входу
+            </div>
+        </div>
+    </div>
+
+    <div class="screen-stack" id="scrHome">
+       Password(pass,newSalt);
+            await docRef.ref.update({salt:newSalt,hash:newHash,passHash:firebase.firestore.FieldValue.delete()});
+        }
+
+        if(!verified) throw new Error("auth_fail");
+
+        // Сохраняем БЕЗ паро <div class="home-header">
+            <div class="home-title" id="lblTitle">Чаты</div>
+            <div style="display:flex;gap:16px;">
+                <button onclick="openMyProfile()" aria-label="Мой профиль" style="font-size:20px;">👤</button>
+                <button onclick="toggleTheme()" aria-label="Переключить тему" style="font-sizeля/соли/хеши
+        loginUser({id:docRef.id,name:data.name,dept:data.dept,badge:data.badge,role:data.role,status:data.status||'online'});
+    }catch(err){
+        // Единообразное сообщение — не раскрываем существование аккаунта
+:20px;">🌙</button>
+                <button onclick="logout()" style="color:var(--danger);font-size:14px;font-weight:600;">Выйти</button>
+            </div>
+        </div>
+        <div class="search-field">
+            <span aria-hidden="true">🔍</span>
+            <input type="text" placeholder="Поиск..." id="inpSearch" oninput="renderCurrentTab()" aria-label="Поиск по контактам и чатам">
+        </div>
+        <div class="scroll-area" id="mainList" role="list"></div>
+        <div class="tab-bar" role="tablist">
+            <button class="        errBox.innerText="Неверный табельный номер или пароль";
+        errBox.style.display='block';
+    }finally{
+        btn.disabled=false;btn.textContent='ВОЙТИ';
+    }
+}
+
+// === REGISTER ===
+async function doRegister(e){
+    e.preventDefault();
+    const name=document.getElementById('regName').value.trim();
+    const dept=document.getElementById('regDept').value.trim();
+    const badge=document.getElementById('regBadge').value.toUpperCase().trim();tab-btn active"
+    const pass=document.getElementById('regPass').value; onclick="switchTab
+    const errBox=document.getElementById('errReg');
+   ('chats', this)" role="tab" aria const btn=document.getElementById-selected="true">('btnDoReg');
+    errBox.style.display='none';
+
+    if(name.length<2||name💬<br>Чаты<span class="badge-dot hidden" id="dotChats.length>"></span></button>
+            <button class="100){tab-btn" onclickerrBox.innerText="="switchTab('contacts', this)" role="tabФИО:">👥<br>Контакты</button>
+            <button class="tab-btn" onclick="switchTab('tasks', this)" 2–100 символов";errBox.style.display='block';return;}
+    role="tab if(de">✅<br>Задачи<span class="badge-dot hidden" id="dotTasks"></span></button>
+        </div>
+pt.length<2){errBox.innerText="Укажите подразделение";errBox.style.display='block';return;}
+        <button class    if(!/^([A-Z]{1,3}-?\d+="fab hidden" id="btnFab" onclick="openTaskSheet)<LaTex>id_1</LaTex>{ле ввода сообщения"></textarea>
+            <button class="send-btn"u.name.split(' onclick="sendMessage()" aria-label="От ')[0]}!править">➤`);
+}</button>
+
+function        </div> logout(){
+    Object.values(un
+    </divsubscribers).forEach(fn=>fn&&fn());>
+
+</div>
+
+<div class="sheet-overlay" id="taskSheet" onclick="if(event.target===
+    localStorage.removeItemthis)this.classList.remove('show')">
+    <div('kz_user class="sheet-content">
+        <div class="handle"></div>
+        <h3 style_v8');location.reload();
+}
+
+async function joinGeneralChannel(uid){
+    const="margin-bottom:20px;"> col=db.collection("Новая задача</h3>
+        <form onsubmit="createchats");
+    const q=col.where("type","==","channel").where("title","==","Общий заводTask(event)">
+            <div class="form-group"><label class="form-label">Заголовок</label><");
+    const snap=await q.get();
+    if(snap.empty){
+        await col.add({type:'channel',title:'Общий завод',members:[uid],lastMessageTime:firebase.firestore.FieldValueinput type="text" class="form-control" id="tkTitle" required maxlength="200"></div>
+            <div class="form-group"><label class="form-label">Описание</label><textarea class="form-control" id="tkDesc" rows="3" maxlength="2000"></textarea></div>
+           .serverTimestamp()});
+    }else{
+        const d=snap.docs[ <div class="form-group"><label class="form-label0];const mem=d.data().members||[];
+        if(!mem.includes(uid)) await d.ref.update({members:[">Исполнитель...mem,uid]});
+    }
+}
+
+async function init</label><select class="form-control" id="tkAssignee"App(){
+    const us=await db.collection("users").get();
+    us.forEach(d=>{
+        // ВАЖНО required></select></div>
+            <: НЕbutton type="submit" class="btn-primary">Создать</button>
+        </form>
+    </div>
+</div>
+
+<div class="sheet-overlay" id="profSheet" onclick="if(event.target===this)this.classList.remove('show')">
+    <div class="sheet-content" style="text-align:center;">
+        <div class кэшируем salt/hash/passHash в памяти клиента
+        const dd=d.data();
+        usersCache[d.id]={id:d.id,name:dd.name,dept:dd.dept,badge:dd.badge,role:dd.role,status:dd.status||'online'};
+="handle"></div>
+        <div class="avatar" style="width:70px;height:70px;font-size:28    });
+   px;margin:0 auto 12px;" id="pfAvatar">??</div>
+        unsubscribers.chats=db.collection("chats").where("members","array-contains",user.id).onSnapshot(snap=>{
+        chatsCache=snap.docs.map(d=>({id:d.id,...d.data()})).sort((a,b)=> <h2 style="font-size:20px;margin-bottom:4px;" id="pfName">Имя</h2>
+        <p style="color:var(--text-secondary);font-size:14px;margin-bottom:20px;" id="pfRole">Должность</p>
+        <div style="background:var(--bg-surface);border-radius:12px;padding:16px;text-align:left;margin-bottom:20px;">
+            <div style="display:flex;justify-content:space-between;margin-bottom:8px;"><span style="color:var(--text-secondary)">Отдел:</span><span id(b.lastMessageTime?.seconds||0)-(a.lastMessageTime?.="pfDept">seconds||0));
+        renderCurrentTab();
+    });
+    unsubscribers.tasks=db.collection("tasks").onSnapshot(snap=>{
+        const all=snap.docs.map(d=>({id:d.id,...d.data()}));
+        tasksCache=all.filter(t=>t.creatorId===user.id||t.assigneeId===user.id);
+        renderCurrentTab();-</span></div
+    });
+>
+            <}
+
+// ===div style="display:flex;justify-content NAVIGATION ===:space-between;"><span style="color:var(--text-secondary)">Номер:</span><span id="pfBadge">-</span
+function showScreen(id){document.querySelectorAll('.screen-stack').forEach(s=>s.classList.remove('active'));document.getElementById(id></div).classList.add('active');}
+function switchTab(tab,btn){
+    currentTab>
+        </div>
+        <button class="btn-primary"=tab; id="btn
+    document.querySelectorAll('.tab-btn').forEach(b=>{b.classList.remove('active');b.setAttributePfAction" onclick="startDMFromProfile()">Написать сообщение</button>
+    </div>
+</div>
+
+<div class="('aria-selected','toast" idfalse');});
+    btn.classList.add('active');btn.setAttribute('aria-selected','true');
+    document.getElementById('lblTitle').innerText=tab==='ch="toastEl" role="status" aria-live="polite"></div>
+
+<script>
+// ============================================================ats'?'Ч
+// COREаты':tab==='contacts'?'Контакты':'Задачи';
+    document.getElementById('btnFab').classList.toggle ENGINE v8.0 —('hidden',tab SECURITY HARD!=='tasks');
+   ENED
+// renderCurrentTab(); ============================================================
+
+const CONFIG = {
+}
+function closeChat(){if(unsubscribers.msgs)unsubscribers.msgs();activeChatId=null;showScreen('scrHome');}
+
+
+    apiKey:"AIzaSyDyuK9iREDYiA-NmjeWgECT2np57V-m86s",
+    authDomain:"kz-messenger-test.firebaseapp.com",
+   // === projectId:"kz-messenger-test",
+    storageBucket:"kz-messenger-test.firebasestorage.app",
+    RENDERING (SAFE DOM) ===
+function renderCurrentTab(){
+    messagingSenderId:"6 const list=document.getElementById('mainList');09564788list.innerHTML='';
+    const query=document.getElementById('inpSearch').value.toLowerCase99",
+();
+    if(currentTab==='chats'){
+           appId:"1 const items=chatsCache.filter(c:6095647=>c8899.type==='dm'||:web:43fbbc9d9755e967b68c.type==='channel');
+       fc6" if(items
+};.length===0){list.innerHTML='<div
+
+let class="empty-view">Нет чатов</div>'; db, storage, user=null;
+let usersCache={}, chatsreturn;}
+        items.forEach(cCache=[], tasks=>list.appendChild(createChatItem(c)));
+   Cache=[];
+ }elselet currentTab='chats', if(currentTab==='contacts'){
+        const others=Object.values(usersCache).filter(u=>u.id!==user.id&&(!query||u.name.toLowerCase(). activeChatId=null;
+let unsubscribers={};
+let pendingUserId=null;
+
+// === CRYPTO HELPERS (SHA-256 + Salt) ===
+async function sha256Hex(str){
+    const buf=new TextEncoder().encode(str);
+    const hash=await crypto.subtle.digest('SHA-256',buf);
+    return Array.from(new Uint8Array(hash)).map(b=>b.toString(16).padStart(2,'0')).join('');
+}
+function genSalt(len=16){
+    const arr=new Uint8Array(len);
+    crypto.getRandomValues(arr);
+    return Array.from(arr).map(b=>b.toString(16).padStart(2,'0')).join('');
+}
+async function hashPassword(password,sincludes(query)||(u.dept||'').toLowerCase().includes(query)));
+        if(others.length===0){list.innerHTML='<div class="empty-view">Нет контактов</div>';return;}
+        others.forEach(u=>list.appendChild(createContactItem(u)));
+    }else if(currentTab==='tasks'){
+        const filtered=tasksCache.filter(t=>!query||t.title.toLowerCase().includes(query));
+        if(filtered.length===0){list.innerHTML='<div class="empty-view">Нет задач</div>';return;}
+        filtered.forEach(t=>list.appendChild(createTaskItem(t)));
+    }
+}
+
+function createChatItem(chat){
+    const div=document.createElement('div');div.className='list-item';div.setAttribute('role','alt){
+    // iterated SHA-256 (лёlistitem');
+    let name=chat.title||'Диалог',sub=гкий PBKDF substitute без внешних библиотек)
+    let h=salt+password;
+    for(let i=0;i<1000;i++){h=await shachat.lastMessageText||'Нет сообщений',avColor='#607d8b',initials='#';
+    if(chat.type==='dm'){
+        const oid=chat.members.find(m=>m!==user.id);const ou=usersCache[oid];
+        name=ou?.name||'Неизвестный';sub=ou?.dept||'';avColor=hashColor256Hex(h);}
+    return h;
+}
+// Legacy check для миграции старых btoa-хешей
+function isLegacyBtoa(stored,plain){return stored===btoa(plain);}
+
+// === INIT ===
+window.onload=async()=>{
+    try{
+        const app=firebase.initializeApp(CONFIG);
+        db=app.firestore();storage=app.storage();
+        const saved=localStorage.getItem('kz_user_v8');
+        if(saved){user=JSON.parse(saved);await initApp();showScreen('scrHome');}
+        else showScreen('scrLogin');
+    }catch(e){alert("Ошибка запуска: "+e.message);}
+};
+
+function toggleAuthMode(){
+    document.getElementById('(oid||'');initials=getInitials(namecardLogin').classList);
+    }
+    const av=document.createElement('div');av.className='avatar';av.style.background=avColor;av.textContent=initials;
+    const body=document.createElement('div');body.className='item-body';
+    const nm=document.createElement('div');nm.className='item-name';nm.textContent=name;
+    const sp=document.createElement('div');sp.className='item-sub';sp.textContent=sub;
+    body.append(nm,sp);div.append(av,body);
+    div.onclick=()=>openChat(chat.id);return div;
+}
+
+function createContactItem(u){
+    const div=document.createElement('div');div.className='list-item';div.setAttribute('role','listitem');
+   .toggle('hidden');
+    document.getElementById('cardReg').classList.toggle('hidden');
+}
+
+// === LOGIN (с авто const av-миграцией legacy-паролей) ===
+async function doLogin(e){
+    e.preventDefault();
+=document.createElement('div');av.className='avatar';    const badge=documentav.style.background=hashColor(u.id);av.textContent=getInitials(u.getElementById('inpBadge').value.toUpperCase().trim();
+    const pass.name);
+    const body=document.createElement('div');body.className='item-body';
+    const nm=document.createElement('div');nm.className='item-name';nm.textContent=u.name;
+    const sp=document.createElement('div');sp.className='item-sub';sp.textContent=`${u=document.getElementById('inp.dept||Pass').value;''} • ${u.badge||''}`;
+    body.append(n
+    const errm,sp);Box=document.getElementById('div.append(av,bodyerrLogin');
+    const btn=document.getElementById('btnDoLogin');
+    errBox.style.display='none';
+
+    if(!badge||!pass||pass.length<6){
+        errBox.innerText="Введите корректные данные";errBox.style.display='block';return;
+    }
+
+);
+       btn.disabled=true div.onclick=()=>{pending;btn.textContent='...';
+   UserId=u try{
+       .id;fill const snap=awaitProfileSheet(u);document.getElementById('btnPfAction').onclick=startDMFromProfile;document.getElementById('profSheet').classList.add('show');};
+    return div;
+}
+
+function fillProfileSheet(u){ db.collection("users
+    document.getElementById").where("badge('pfAvatar').","==",badge).limit(1).get();
+        if(snap.empty) throwtextContent=getInitials(u.name); new Error("auth
+    document.getElementById('pfAvatar').style.background=hashColor_fail");
+        const docRef(u.id);=snap.docs[0];
+        const data=docRef.data();
+
+       
+    document.getElementById('pfName').textContent=u let.name;
+    document.getElementById('pfRole').textContent verified=false;
+        // Новый формат: {salt, hash}
+       =u.role|| if(data.salt&&data.hash){
+           'сотрудник';
+    const computed document.getElementById('pf=await hashPassword(pass,data.salt);
+            verified=(computed===data.hash);
+       Dept').textContent=u.dept||'—';
+    document.getElementById('pfBadge').textContent=u.badge||'—';
+}
+
+function createTaskItem(t){
+    const div=document.createElement('div');div.className='task-card }
+        // Старый формат: passHash=b';
+   toa(pass) const head=document.createElement('div');head.className='task-head';
+    const idSpan=document.createElement('span');idSpan.textContent='#'+t.id.slice(-4);
+    const chip=document.createElement('span');chip.className='status → мигрируем на лету
+        else if(data.passHash&&isLegacyBtoa(data.passHash,pass)){
+            verified=true;
+            const newSalt=genSalt();
+            const newHash=await hashPassword(pass,newSalt);
+            await docRef.ref.update({salt:newSalt,hash:newHash,passHash:firebase.firestore.FieldValue.delete()});
+        }
+
+        if(!verified-chip '+(t.status==='done'?'st-done':t.status==='progress'?'st-prog':'st-new');
+    chip.textContent=t.status==='done'?'Готово':t.status==='progress'?'В работе':'Новая';
+    head.append(idSpan,chip);
+    const ttl=document.createElement('div');ttl.style.cssText='font-weight:600;margin-bottom:4px;';ttl.textContent=t.title;
+   ) throw new Error("auth_fail");
+
+        // Сохраняем БЕЗ пароля/соли/хеши
+        loginUser({id:docRef.id,name:data.name,dept:data.dept,badge:data.badge,role:data.role,status:data.status||'online'});
+    }catch(err){
+        // Единообразное сообщение — не раскрываем существование аккаунта
+        errBox.innerText="Неверный табельный номер или пароль"; const dsc=document.createElement('div');dsc.style.cssText='font-size:13px;color:var(--text-secondary);margin-bottom:8px;
+       ';dsc.textContent=t.description||'';
+    const ftr=document.createElement('div');ftr.style.cssText='font-size:12px;color:var(--text-secondary);';
+    ftr.textContent='Исп: '+(usersCache[t.assigneeId]?.name.split(' ')[0]||'?');
+    div.append(head,ttl,dsc,ftr);
+    div.onclick=()=>cycleTask(t errBox.style.display='block';
+    }finally{
+.id,t.status);return div;
+}
+
+// ===        btn.disabled=false;btn.textContent='ВОЙТИ';
+    }
+}
+
+// === REGISTER ===
+async CHAT ( function doRegister(eSAFE){
+    e.preventDefault();
+    const name=document.getElementById('regName').value.trim(); MESSAGE RENDER) ===
+function openChat(cid){
+    activeChatId=cid;
+    const chat=chatsCache.find(c=>c.id===cid);
+    if(chat){
+
+    const dept=document.getElementById('regDept').value.trim();
+    const badge=document.getElementById('regBadge').value.toUpperCase().trim();
+    const pass=document.getElementById('regPass').value;
+    const errBox=document.getElementById('errReg');
+    const btn=document.getElementById('btnDoReg');
+           let n=chat.title;if(chat.type==='dm')n=usersCache[chat.members.find(m=>m!==user.id errBox.style.display='none';
+
+)]?.name||'Диалог';
+        document.getElementById('hdrName').textContent=n;
+           if(name document.getElementById('hdr.length<2Avatar').textContent=get||nameInitials(n);.length>100){errBox.innerText="ФИО: 2–1
+        document.getElementById('hdrAvatar').style.background00 симв=hashColor(cidолов";errBox.style.display='block';return;}
+   );
+    if(de }
+    showpt.length<2){errBox.innerText="Укажите подразделение";errScreen('scrChat');
+    ifBox.style.display='(unsubscribers.msgblock';return;}
+    if(!/^([s)unsubscribers.msgs();
+    const q=db.collection("messages").where("chatId","==A-Z]{1",cid).,3}-?\d+)<LaTex>id_2</LaTex>{isMe?'me':'other'}`;
+({id:ref.id,name,dept,badge,role:'employee',        if(m.imageUrlstatus:'online'}){const);
+    } img=document.createElement('catch(err){
+img');img.src        errBox.innerText=m.imageUrl;=err.message;errBox.style.display='blockimg.alt='';
+   Фото';img.loading='lazy';img.style.cssText='max-width:100%;border-radius:8px;margin-top }finally{
+        btn.disabled=false;btn.textContent='СОЗДАТЬ АККАУНТ';
+    }
+}
+
+function loginUser(u){
+    user=u;
+    // Ника:4px;displayких по:block;';bubble.appendChild(img);}
+        if(m.fileName){const fd=document.createElement('div');fd.textContent='лей password📄 '+m.fileName+' ('+(/hash/salt/passHash здесь быть не должно
+m.fileSize||'')+')';fd.style.cssText='background:rgba(0,0,0    localStorage.setItem('kz_user_v8',JSON.stringify(user));
+    initApp();showScreen,.('scrHome');05);padding
+    toast(`Пр:8px;borderивет, ${-radius:8pxu.name.split(' ')[0]}!`);
+};margin-top:
+function4px; logout(){
+';bubble.appendChild(fd);}
+        if(m.text){const td=document.createElement('div');td.textContent=m.text;b    Object.values(unsubscribers).forEach(fn=>fn&&fn());
+    localStorage.removeItem('kz_user_v8');location.reload();
+}
+
+async function joinGeneralChannel(uid){
+    const col=db.collection("chats");
+    const q=colubble.appendChild(td);}
+        const ts=document.createElement('span');ts.textContent=time;ts.style.cssText='font-size:10px;opacity:.6;text-align:right;display:block;margin-top:2px;';bubble.appendChild(ts);
+        cont.appendChild(bubble);
+   .where("type","==","channel").where("title","==","Общий завод");
+    const snap=await q.get();
+    if(snap.empty){
+        await col.add({ });
+    requestAnimationFrame(()=>{cont.scrollTop=cont.scrollHeight;});
+}
+
+async function sendMessage(){
+    const inp=document.getElementById('msgInput');type:'channel',title:'Общийconst txt=inp завод',members:[uid],lastMessageTime:.value.trim();
+firebase.firestore.FieldValue    if(!txt.serverTimestamp()});
+    }else{
+||!activeChatId)return;
+        const d=snap.docs[0];const mem=d.data().members||[];
+        if(!mem.includes(uid)) await d.ref.update({members:[...mem,uid]});
+    }
+}
+
+async function initApp(){
+    const us=await db.collection("users").get();
+    us.forEach(d=>{
+        // ВАЖНО: НЕ кэшируем salt/hash/passHash в памяти клиента
+        const dd=d.data();
+        usersCache[d.id]={id:d.id,name:dd.name,dept:dd.dept,badge:dd.badge,role:dd.role,status:dd.status||'online'};
+    });
+    unsubscribers.chats=db.collection("chats").where("members","array-contains",user.id).onSnapshot(snap=>{
+        chatsCache=snap.docs.map(d=>({id:d.id,...d.data()})).sort((a,b)=>(b.lastMessageTime?.seconds||0)-(a.lastMessageTime?.seconds||0));
+        renderCurrentTab();
+    });
+    unsubscribers.tasks=db.collection("tasks").onSnapshot(snap=>{
+        const all=snap.docs.map(d=>({id:d.id,...d.data()}));
+        tasksCache=all.filter(t=>t.creatorId===user.id||t.assigneeId===user.id);
+        renderCurrentTab();
+    });
+}
+
+// === NAVIGATION ===
+function showScreen(id){document.querySelectorAll('.screen-stack').forEach(s=>s.classList.remove('active'));document.getElementById(id).classList.add('active');}
+    if(txt.length>4000){toast('Слишком длинноеfunction switchTab(tab,btn){
+    currentTab=tab;
+    document.querySelectorAll('.tab-btn').forEach(b=>{b.classList.remove('active');b.setAttribute('aria-selected','false');});
+    btn.classList.add('active');btn.setAttribute('aria-selected','true');
+    document.getElementById('lblTitle').innerText=tab==='chats'?'Чаты':tab==='contacts'?'Контакты':'Задачи';
+    document.getElementById('btnFab').classList.toggle('hidden',tab!=='tasks');
+    renderCurrentTab();
+}
+function closeChat(){if(unsubscribers.msgs)unsub сообщение');return;}
+    inp.value='';
+    try{
+scribers.msgs();activeChatId=null;showScreen('scrHome');}
+
+// === RENDERING (SAFE DOM) ===
+function renderCurrentTab(){
+    const list=document.getElementById('mainList');list.innerHTML='';        await db.collection("messages").add({chatId:activeChatId,s
+    const query=document.getElementById('inpSearch').value.toLowerCase();
+    if(currentTab==='chats'){
+        const items=chatsCache.filter(c=>c.type==='dm'||c.type==='channel');
+        if(items.length===0){list.innerHTML='<div class="empty-view">Нет чатов</div>';return;}
+        items.forEach(c=>list.appendChild(createChatItem(c)));
+    }else if(currentTab==='contacts'){
+        const others=Object.values(usersCache).filter(u=>u.id!==user.id&&(!query||u.name.toLowerCase().includes(query)||(u.dept||'').toLowerCase().includes(query)));
+        if(others.length===0){list.innerHTML='<div class="empty-view">Нет контактов</div>';return;}
+        others.forEach(u=>list.appendChild(createContactItem(u)));
+    }else if(currentTab==='tasks'){
+        const filtered=tasksCache.filter(t=>!query||t.title.toLowerCase().includes(query));
+        if(filtered.length===0){list.innerHTML='<div class="empty-view">Нет задач</div>';return;}
+        filtered.forEach(t=>list.appendChild(createTaskItem(t)));
+    }
+}
+
+function createChatItem(chat){
+    const div=document.createElement('div');div.className='list-item';div.setAttribute('role','listitem');
+    let name=chat.title||'Диалог',sub=chat.lastMessageText||'Нет сообщений',avColor='#607d8b',initials='#';
+    if(chat.type==='dm'){
+        const oid=chat.members.find(m=>m!==user.id);const ou=usersCache[oid];
+        name=ou?.name||'Неизвестный';sub=ou?.dept||'';avColor=hashColor(oid||'');initials=getInitials(name);
+    }
+    const av=document.createElement('div');av.className='avatar';av.style.background=avColor;av.textContent=initials;
+    const body=document.createElement('div');body.className='item-body';
+    const nm=document.createElement('div');nm.className='item-name';nm.textContent=name;
+    const sp=document.createElement('div');sp.className='item-sub';sp.textContent=sub;
+    body.append(nm,sp);div.append(av,body);
+    div.onclick=()=>openChat(chat.id);return div;
+}
+
+function createContactItem(u){
+    const div=document.createElement('div');div.className='list-item';div.setAttribute('role','listitem');
+    const av=document.createElement('div');av.className='avatar';av.style.background=hashColor(u.id);av.textContent=getInitials(u.name);
+    const body=document.createElement('div');body.className='item-body';
+    const nm=document.createElement('div');nm.className='item-name';nm.textContent=u.name;
+    const sp=document.createElement('div');sp.className='item-sub';sp.textContent=`${u.dept||''} • ${u.badge||''}`;
+    body.append(nm,sp);div.append(av,body);
+    div.onclick=()=>{pendingUserId=u.id;fillProfileSheet(u);document.getElementById('btnPfAction').onclick=startDMFromProfile;document.getElementById('profSheet').classList.add('show');};
+    return div;
+}
+
+function fillProfileSheet(u){
+    document.getElementById('pfAvatar').textContent=getInitials(u.name);
+    document.getElementById('pfAvatar').style.background=hashColor(u.id);
+    document.getElementById('pfName').textContent=uenderId:user.id,text:txt,createdAt:.name;
+    document.getElementById('pfRole').textContent=u.role||'сотрудник';
+    document.getElementById('pfDept').textContent=u.dept||'—';
+    document.getElementById('pfBadge').textContent=u.badge||'—';
+}
+
+function createTaskItem(t){
+    const div=document.createElement('div');div.className='task-card';
+    const head=document.createElement('div');head.className='task-head';
+    const idSpan=document.createElement('span');idSpan.textContent='#'+t.id.slice(-4);
+    const chip=document.createElement('span');chip.className='status-chip '+(t.status==='done'?'st-done':t.status==='progress'?'st-prog':'st-new');
+    chip.textContent=t.status==='done'?'Готово':t.status==='progress'?'В работе':'Новая';
+    head.append(idSpan,chip);
+    const ttl=document.createElement('div');ttl.style.cssText='font-weight:600;margin-bottom:4px;';ttl.textContent=t.title;
+    const dsc=document.createElement('div');dsc.style.cssText='font-size:13px;color:var(--text-secondary);margin-bottom:8px;';dsc.textContent=t.description||'';
+    const ftr=document.createElement('div');ftr.style.cssText='font-size:12px;color:var(--text-secondary);';
+    ftr.textContent='Исп: '+(usersCache[t.assigneeId]?.name.split(' ')[0]||'?');
+    div.append(head,ttl,dsc,ftr);
+    div.onclick=()=>cycleTask(t.id,t.status);return div;
+}
+
+// === CHAT (SAFE MESSAGE RENDER) ===
+function openChat(cid){
+    activeChatId=cid;
+    const chat=chatsCache.find(c=>c.id===cid);
+    if(chat){
+        let n=chat.title;if(chat.type==='dm')n=usersCache[chat.members.find(m=>m!==user.id)]?.name||'Диалог';
+        document.getElementById('hdrName').textContent=n;
+        document.getElementById('hdrAvatar').textContent=getInitials(n);
+        document.getElementById('hdrAvatar').style.background=hashColor(cid);
+    }
+    showScreen('scrChat');
+    if(unsubscribers.msgs)unsubscribers.msgs();
+    const q=db.collection("messages").where("chatId","==",cid).orderBy("createdAt","asc").limit(100);
+    unsubscribers.msgs=q.onSnapshot(snap=>{renderMessagesSecurely(snap.docs.map(d=>d.data()));},err=>{
+        console.warn("Fallback msg loader:",err);
+        const fb=db.collection("messages").where("chatId","==",cid).limit(100);
+        unsubscribers.msgs=fb.onSnapshot(s=>{
+            const msgs=s.docs.map(d=>d.data()).sort((a,b)=>firebase.firestore.FieldValue(a.createdAt?.seconds||0)-(b.createdAt?.seconds||0));
+            render.serverTimestamp()});
+       MessagesSecurely(msgs);
+        });
+    });
+}
+
+function renderMessagesSecurely(msgs){
+    const cont=document.getElementById('msgContainer');cont.innerHTML='';
+    msgs.forEach(m=>{
+        const isMe=m.senderId===user.id;
+        const time=m.createdAt?new Date(m.createdAt.seconds*1000).toLocaleTimeString([],{hour:'2-digit',minute:'2-digit'}):'';
+        const bubble=document.createElement('div');bubble.className=`bubble ${isMe?'me':'other'}`;
+        if(m.imageUrl){const img=document.createElement('img');img.src=m.imageUrl;img.alt='Фото';img.loading='lazy';img.style.cssText='max-width:100%;border-radius:8px;margin-top:4px;display:block;';bubble.appendChild(img);}
+        if(m.fileName){const fd=document.createElement('div');fd.textContent='📄 '+m.fileName+' ('+(m.fileSize||'')+')';fd.style.cssText='background:rgba(0,0,0,.05);padding:8px;border-radius:8px;margin-top:4px;';bubble.appendChild(fd);}
+        if(m.text){const td=document.createElement('div');td.textContent=m.text;bubble.appendChild(td);}
+        const ts=document.createElement('span');ts.textContent=time;ts.style.cssText='font-size:10px;opacity:.6;text-align:right;display:block;margin-top:2px;';bubble.appendChild(ts);
+        cont.appendChild(bubble);
+    });
+    requestAnimationFrame(()=>{cont.scrollTop=cont.scrollHeight;});
+}
+
+async function sendMessage(){
+    const inp=document.getElementById('msgInput');const txt=inp.value.trim();
+    if(!txt await db.collection("||!activeChatchats").doc(activeChatId).update({Id)return;
+    if(txt.length>4000){toast('Слишком длинное сообщение');return;}
+    inp.value='';
+    try{
+        await db.collection("messages").add({chatId:activeChatId,senderId:user.id,text:txt,createdAt:firebase.firestore.FieldValue.serverTimestamp()});
+        await db.collection("chats").doc(activeChatId).update({lastMessageText:txt,lastMessageTimelastMessageText:txt,lastMessageTime:firebase.firestore.FieldValue.serverTimestamp(),:firebase.firestore.FieldValue.serverTimestamp(),lastMessageSender:userlastMessageSender:user.id});
+    }catch(e){toast('Ошибка отправки');.id});
+    }catch(e){toast('Ошибка отправки');}
+}
+function handleKey(e){if(e.key==='Enter'}
+}
+function handleKey(e){if(e.key==='Enter'&&!e.shiftKey){e.preventDefault();sendMessage();}}
+
+&&!e.shiftKey){e.preventDefault();sendMessage();}}
+
+// === FILE UPLOAD// === FILE UPLOAD (VALIDATED) ===
+const ALLOWED_TYPES (VALIDATED) ===
+const ALLOWED_TYPES=['image/jpeg','image/png','image/webp','image=['image/jpeg','image/png','image/webp','image/gif','application/pdf','text/plain','application/gif','application/pdf','text/plain','application/msword','application/vnd.openxmlformats/msword','application/vnd.openxmlformats-officedocument.wordprocessingml.document'];
+const BLOCKED_EXT=/-officedocument.wordprocessingml.document'];
+const BLOCKED_EXT=/\.(exe|bat|sh|cmd|com|scr|msi|jar|apk|dll)<LaTex>id_3</LaTex>/i;
+const MAX_FILE_SIZE=10*1024*1024; // 10 MB
+
+async
+const MAX_FILE_SIZE=10*1024*1024; // 10 MB
+
+async function sendFile(input){
+    const f=input.files[0]; function sendFile(input){
+    const f=input.files[0];if(!f||!activeChatId)return;
+    ifif(!f||!activeChatId)return;
+    if(BLOCKED_EXT(BLOCKED_EXT.test(f.name.test(f.name)){toast('Тип файла запрещён полит)){toast('Тип файла запрещён политикой безопасности');input.value='';return;}
+    if(!икой безопасности');input.value='';return;}
+    if(!ALLOWED_TYPES.includes(f.type)&&BLOCKED_EXT.test(f.nameALLOWED_TYPES.includes(f.type)&&BLOCKED_EXT.test(f.name)){toast('Неподдерживаемый тип');input.value)){toast('Неподдерживаемый тип');input.value='';return;}
+    if(f.size>MAX_FILE_SIZE){toast('='';return;}
+    if(f.size>MAX_FILE_SIZE){toast('МакМаксимумсимум 10 МБ');input.value='';return;}
+
+    const path 10 МБ');input.value='';return;}
+
+    const path=`uploads=`uploads/<LaTex>id_4</LaTex>{f.name.replace(/[^a-zA-Z0/<LaTex>id_5</LaTex>{f.name.replace(/[^a-zA-Z0-9._-]/g,'_')}`;
+   -9._- const task]/g,'_')}`;
+    const task=storage.ref(path=storage.ref(path).put(f);
+    task.on('state_changed',null,err).put(f);
+    task.on('state_changed',null,err=>{console.error(err);toast('Ошибка загрузки');=>{console.error(err);toast('Ошибка загрузки');},async()=>{},async()=>{
+        const url=await task.snapshot.ref.get
+        const url=await task.snapshot.ref.getDownloadURL();
+        const isImg=f.typeDownloadURL();
+        const isImg=f.type.startsWith('image/');
+        await db.collection(".startsWith('image/');
+        await db.collection("messages").add({chatId:activeChatId,senderId:user.id,text:'',messages").add({chatId:activeChatId,senderId:user.id,text:'',imageUrl:isImg?url:null,fileUrl:url,fileName:fimageUrl:isImg?url:null,fileUrl:url,fileName:f.name,fileSize:(f.size/1024).toFixed(1)+'.name,fileSize:(f.size/1024).toFixed(1)+' KB',createdAt:firebase.firestore.FieldValue.serverTimestamp() KB',createdAt:firebase.firestore.FieldValue.serverTimestamp()});
+        input.value='';
+    });
+}
+
+// ===});
+        input.value='';
+    });
+}
+
+// === TASKS ===
+function openTaskSheet(){
+    const TASKS ===
+function openTaskSheet(){
+    const sel=document.getElementById(' sel=document.getElementById('tkAssignee');tkAssignee');sel.innerHTML='<option value="">Выберите...</option>';
+   sel.innerHTML='<option value="">Выберите...</option>';
+    Object.values(usersCache).forEach(u=>{if(u.id!==user.id) Object.values(usersCache).forEach(u=>{if(u.id!==user.id)sel.insertAdjacentHTML('beforeend',`<option valuesel.insertAdjacentHTML('beforeend',`<option value="<LaTex>id_6</LaTex>{escAttr(u.name)}</option>`);="${u.id}">${escAttr(u.name)}</option>`);});
+   });
+    document.getElementById('taskSheet').classList.add document.getElementById('taskSheet').classList.add('show');
+}
+async function createTask(e){
+    e('show');
+}
+async function createTask(e){
+    e.preventDefault();
+    const title=document.preventDefault();
+    const title=document.getElementById('tkTitle').value.trim();
+    const.getElementById('tkTitle').value.trim();
+    const desc=document.getElementById('tkDesc').value.trim();
+    desc=document.getElementById('tkDesc').value.trim();
+    const aid=document.getElementById('tkAssignee').value; const aid=document.getElementById('tkAssignee').value;
+    if(!title||!aid)return toast('Заполните поля
+    if(!title||!aid)return toast('Заполните поля');
+    if(title.length>200)return toast('Заголо');
+    if(title.length>200)return toast('Заголовок слишком длинныйвок слишком длинный');
+    await db.collection("');
+    await db.collection("tasks").add({title,description:desc,creatorIdtasks").add({title,description:desc,creatorId:user.id,assign:user.id,assigneeId:aid,status:'new',eeId:aid,status:'new',createdAt:firebase.firestore.FieldValue.serverTimestamp()});
+   createdAt:firebase.firestore.FieldValue.serverTimestamp()});
+    document.getElementById('taskSheet').classList.remove document.getElementById('taskSheet').classList.remove('show');document.getElementById('tkTitle').value='';('show');document.getElementById('tkTitle').value='';toast('Задача создана');
+}
+async function cycleTasktoast('Задача создана');
+}
+async function cycleTask(id,curr){
+    const next=curr==='new'?'progress':(id,curr){
+    const next=curr==='new'?'progress':curr==='progress'?'done':'new';
+    awaitcurr==='progress'?'done':'new';
+    await db.collection("tasks").doc(id).update({status:next});
+}
+
+// db.collection("tasks").doc(id).update({status:next});
+}
+
+// === DM === DM & PROFILE ===
+async function find & PROFILE ===
+async function findOrCreateDM(uid){
+    const ids=[user.id,uid].sort();const detOrCreateDM(uid){
+    const ids=[user.id,uid].sort();const detId=`kz_dm_${ids.joinId=`kz_dm_${ids.join('_')}`;
+    try{
+('_')}`;
+    try{
+        const doc        const docRef=db.collection("chats").doc(detId);Ref=db.collection("chats").doc(detId);const snap=await docRef.get();
+        if(!snapconst snap=await docRef.get();
+        if(!snap.exists)await docRef.set({type:'dm',members:ids,.exists)await docRef.set({type:'dm',members:ids,createdAt:firebase.firestorecreatedAt:firebase.firestore.FieldValue.serverTimestamp.FieldValue.serverTimestamp(),lastMessageTime:firebase.firestore.Field(),lastMessageTime:firebase.firestore.FieldValue.serverTimestamp(),lastMessageText:''});
+       Value.serverTimestamp(),lastMessageText:''});
+        openChat(det openChat(detId);
+    }catch(e){toast('Ошибка соединения');}
+Id);
+    }catch(e){toast('Ошибка соединения');}
+}
+function startDMFromProfile(){document}
+function startDMFromProfile(){document.getElementById('profSheet').classList.remove('show');if.getElementById('profSheet').classList.remove('show');if(pendingUserId)findOrCreateDM(pendingUserId(pendingUserId)findOrCreateDM(pendingUserId);}
+function openMyProfile(){
+    pendingUserId=user.id;fill);}
+function openMyProfile(){
+    pendingUserId=user.id;fillProfileSheet(user);
+   ProfileSheet(user);
+    document.getElementById('btnPfAction').onclick=()=>document.getElementById(' document.getElementById('btnPfAction').onclick=()=>document.getElementById('profSheet').classList.remove('show');
+    documentprofSheet').classList.remove('show');
+    document.getElementById('prof.getElementById('profSheet').classList.addSheet').classList.add('show');
+}
+
+// === THEME & UTILS ===
+function('show');
+}
+
+// === THEME & UTILS ===
+function toggleTheme(){
+    const h=document.documentElement;const d toggleTheme(){
+    const h=document.documentElement;const d=h.getAttribute('data-theme')==='dark';
+    if(d=h.getAttribute('data-theme')==='dark';
+    if(d)h.removeAttribute('data-theme');else)h.removeAttribute('data-theme');else h.setAttribute('data-theme','dark');
+    localStorage.setItem('k h.setAttribute('data-theme','dark');
+    localStorage.setItem('kz_theme',d?'light':'dark');
+}
+if(localStorage.getItemz_theme',d?'light':'dark');
+}
+if(localStorage.getItem('kz_theme')==='dark')('kz_theme')==='dark')document.documentElement.setAttribute('data-theme','dark');
+
+function esc(tdocument.documentElement.setAttribute('data-theme','dark');
+
+function esc(t){return String(t??'').replace(/[&<>"]/g,m=>({'&':'){return String(t??'').replace(/[&<>"]/g,m=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[m]));}
+&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[m]));}
+function escAttr(t){return String(t??function escAttr(t){return String(t??'').replace(/[&<>"']/'').replace(/[&<>"']/g,m=>({'&':'&amp;','<':'&lt;','>':'&gt;','g,m=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#0"':'&quot;',"'":'&#039;'}[m]));}
+function getInitials(n){return n?String(n).split(/\s+/).map(x=>x[0]).39;'}[m]));}
+function getInitials(n){return n?String(n).split(/\s+/).map(x=>x[0]).slice(0,2).join('').toUpperCase():'?';}
+functionslice(0,2).join('').toUpperCase():'?';}
+function hashColor(s){const p=[' hashColor(s){const p=['#0057b8','#e91e63','#9c27b#0057b8','#e91e63','#9c27b0','#ff9800','#4caf50'];let h=0;s=String(s||0','#ff9800','#4caf50'];let h=0;s=String(s||'');for(let'');for(let i=0;i<s.length;i++)h=s.charCodeAt(i)+((h<<5 i=0;i<s.length;i++)h=s.charCodeAt(i)+((h<<5)-h);return p[Math.abs(h)%p.length];}
+)-h);return p[Math.abs(h)%p.length];}
+function toast(m){const t=document.getElementById('toastEl');tfunction toast(m){const t=document.getElementById('toastEl');t.textContent=m;t.classList.add('.textContent=m;t.classList.add('show');setTimeout(()=>show');setTimeout(()=>t.classList.remove('show'),3000);}
+</script>
+</t.classList.remove('show'),3000);}
+</script>
+</body>
+</html>
