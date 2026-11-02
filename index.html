@@ -1,0 +1,624 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no,viewport-fit=cover">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="theme-color" content="#0a192f">
+<title>KZ Messenger | Коломенский завод</title>
+<link rel="manifest" href="./manifest.json">
+<link rel="apple-touch-icon" href="/icon.png">
+<style>
+/* ============================================
+   ДИЗАЙН СИСТЕМА — iOS NATIVE v6.0 MAXIMUM
+   ============================================ */
+:root {
+    --brand-dark: #0a192f;
+    --brand-blue: #0057b8;
+    --brand-light: #e6f0ff;
+    --bg-main: #ffffff;
+    --bg-surface: #f2f2f7;
+    --bg-elevated: #ffffff;
+    --text-primary: #1c1e21;
+    --text-secondary: #8e8e93;
+    --border-color: #dcdfe6;
+    --success: #34c759;
+    --warning: #ff9500;
+    --danger: #ff3b30;
+    --safe-t: env(safe-area-inset-top, 0px);
+    --safe-b: env(safe-area-inset-bottom, 0px);
+    --radius-md: 12px;
+    --radius-lg: 16px;
+    --shadow-sm: 0 1px 3px rgba(0,0,0,0.08);
+}
+
+[data-theme="dark"] {
+    --bg-main: #000000;
+    --bg-surface: #1c1c1e;
+    --bg-elevated: #2c2c2e;
+    --text-primary: #ffffff;
+    --text-secondary: #98989f;
+    --border-color: #38383a;
+    --brand-light: #1a3a5c;
+}
+
+* { box-sizing: border-box; margin: 0; padding: 0; -webkit-tap-highlight-color: transparent; }
+body {
+    font-family: -apple-system, BlinkMacSystemFont, "SF Pro Text", sans-serif;
+    background: var(--bg-main); color: var(--text-primary);
+    height: 100dvh; overflow: hidden; transition: background 0.3s;
+}
+button { cursor: pointer; border: none; background: none; font: inherit; outline: none; touch-action: manipulation; }
+input, textarea, select { font: inherit; border: none; background: none; width: 100%; outline: none; -webkit-appearance: none; }
+::-webkit-scrollbar { display: none; }
+.hidden { display: none !important; }
+
+/* --- SCREENS STACK --- */
+#app-root { position: relative; width: 100%; height: 100%; }
+.screen-stack {
+    position: absolute; inset: 0; display: flex; flex-direction: column;
+    background: var(--bg-main); transform: translateX(100%); opacity: 0; pointer-events: none;
+    transition: transform 0.3s cubic-bezier(0.32, 0.72, 0, 1), opacity 0.3s; z-index: 1;
+}
+.screen-stack.active { transform: translateX(0); opacity: 1; pointer-events: auto; z-index: 10; }
+.screen-stack.exit-left { transform: translateX(-30%); opacity: 0; }
+
+/* --- LOGIN --- */
+.login-screen { justify-content: center; align-items: center; background: linear-gradient(160deg, #0a192f 0%, #0057b8 100%); padding: 20px calc(20px + var(--safe-r)) calc(20px + var(--safe-b)); }
+.login-card { background: rgba(255,255,255,0.1); backdrop-filter: blur(20px); border: 1px solid rgba(255,255,255,0.2); border-radius: 20px; padding: 24px; width: 100%; max-width: 380px; }
+.login-input { background: rgba(255,255,255,0.15); border: 1px solid rgba(255,255,255,0.3); border-radius: 12px; padding: 14px; color: white; margin-bottom: 12px; font-size: 16px; }
+.login-input::placeholder { color: rgba(255,255,255,0.5); }
+.login-btn { width: 100%; padding: 16px; background: white; color: var(--brand-dark); border-radius: 12px; font-weight: 700; margin-top: 8px; }
+.login-error { background: rgba(255,59,48,0.2); color: #ffb3b0; padding: 10px; border-radius: 8px; font-size: 13px; margin-bottom: 12px; text-align: center; display: none; }
+
+/* --- HOME UI --- */
+.home-header { padding: calc(12px + var(--safe-t)) 16px 12px; border-bottom: 1px solid var(--border-color); display: flex; justify-content: space-between; align-items: center; }
+.home-title { font-size: 28px; font-weight: 700; }
+.search-field { background: var(--bg-surface); border-radius: 12px; padding: 10px 14px; margin: 0 16px 12px; display: flex; gap: 8px; }
+.scroll-area { flex: 1; overflow-y: auto; -webkit-overflow-scrolling: touch; }
+.tab-bar { display: flex; border-top: 1px solid var(--border-color); padding: 4px 0 calc(4px + var(--safe-b)); }
+.tab-btn { flex: 1; display: flex; flex-direction: column; align-items: center; color: var(--text-secondary); font-size: 10px; padding: 6px 0; position: relative; }
+.tab-btn.active { color: var(--brand-blue); }
+.tab-icon { font-size: 22px; margin-bottom: 2px; }
+.badge-dot { position: absolute; top: 4px; right: 30%; width: 8px; height: 8px; background: var(--danger); border-radius: 50%; }
+
+/* --- LISTS --- */
+.list-item { display: flex; align-items: center; gap: 12px; padding: 12px 16px; border-bottom: 1px solid var(--bg-surface); cursor: pointer; }
+.avatar { width: 50px; height: 50px; border-radius: 50%; background: var(--brand-blue); color: white; display: flex; align-items: center; justify-content: center; font-weight: 600; font-size: 18px; flex-shrink: 0; }
+.item-body { flex: 1; min-width: 0; }
+.item-name { font-weight: 600; font-size: 16px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.item-sub { font-size: 14px; color: var(--text-secondary); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.empty-view { padding: 60px 20px; text-align: center; color: var(--text-secondary); }
+
+/* --- CHAT --- */
+.chat-header { padding: calc(10px + var(--safe-t)) 16px 10px; border-bottom: 1px solid var(--border-color); display: flex; align-items: center; gap: 12px; }
+.back-arrow { font-size: 28px; color: var(--brand-blue); }
+.msg-list { flex: 1; overflow-y: auto; padding: 16px; display: flex; flex-direction: column; gap: 8px; background: var(--bg-surface); }
+.bubble { max-width: 75%; padding: 10px 14px; border-radius: 18px; font-size: 16px; line-height: 1.4; word-wrap: break-word; }
+.bubble.me { align-self: flex-end; background: var(--brand-blue); color: white; border-bottom-right-radius: 4px; }
+.bubble.other { align-self: flex-start; background: var(--bg-elevated); border-bottom-left-radius: 4px; box-shadow: var(--shadow-sm); }
+.composer { padding: 10px 16px calc(10px + var(--safe-b)); background: var(--bg-main); border-top: 1px solid var(--border-color); display: flex; gap: 10px; align-items: flex-end; }
+.comp-input { flex: 1; background: var(--bg-surface); border-radius: 20px; padding: 10px 14px; resize: none; max-height: 100px; }
+.send-btn { width: 36px; height: 36px; border-radius: 50%; background: var(--brand-blue); color: white; display: flex; align-items: center; justify-content: center; }
+
+/* --- TASKS --- */
+.task-card { margin: 0 16px 10px; padding: 14px; background: var(--bg-elevated); border: 1px solid var(--border-color); border-radius: 12px; box-shadow: var(--shadow-sm); }
+.task-head { display: flex; justify-content: space-between; margin-bottom: 6px; }
+.status-chip { font-size: 10px; padding: 2px 8px; border-radius: 10px; font-weight: 700; text-transform: uppercase; }
+.st-new { background: #dbeafe; color: #1e40af; }
+.st-prog { background: #fef3c7; color: #92400e; }
+.st-done { background: #dcfce7; color: #166534; }
+.fab { position: fixed; bottom: calc(70px + var(--safe-b)); right: 20px; width: 56px; height: 56px; border-radius: 50%; background: var(--brand-blue); color: white; font-size: 28px; box-shadow: 0 4px 12px rgba(0,87,184,0.4); z-index: 50; display: flex; align-items: center; justify-content: center; }
+
+/* --- MODALS --- */
+.sheet-overlay { position: fixed; inset: 0; background: rgba(0,0,0,0.4); z-index: 200; display: flex; align-items: flex-end; opacity: 0; pointer-events: none; transition: opacity 0.3s; }
+.sheet-overlay.show { opacity: 1; pointer-events: auto; }
+.sheet-content { background: var(--bg-main); width: 100%; max-width: 500px; border-radius: 20px 20px 0 0; padding: 20px 20px calc(20px + var(--safe-b)); transform: translateY(100%); transition: transform 0.3s cubic-bezier(0.32, 0.72, 0, 1); }
+.sheet-overlay.show .sheet-content { transform: translateY(0); }
+.handle { width: 36px; height: 5px; background: var(--border-color); border-radius: 3px; margin: 0 auto 20px; }
+.form-group { margin-bottom: 16px; }
+.form-label { display: block; font-size: 12px; color: var(--text-secondary); margin-bottom: 6px; font-weight: 600; text-transform: uppercase; }
+.form-control { background: var(--bg-surface); border: 1px solid var(--border-color); border-radius: 12px; padding: 12px; font-size: 16px; color: var(--text-primary); width: 100%; }
+.btn-primary { width: 100%; padding: 14px; background: var(--brand-blue); color: white; border-radius: 12px; font-weight: 600; margin-top: 10px; }
+
+.toast { position: fixed; top: calc(20px + var(--safe-t)); left: 50%; transform: translateX(-50%) translateY(-100px); background: var(--brand-dark); color: white; padding: 12px 20px; border-radius: 20px; font-size: 14px; z-index: 9999; transition: transform 0.3s; }
+.toast.show { transform: translateX(-50%) translateY(0); }
+</style>
+
+<!-- Firebase SDK -->
+<script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-app-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-storage-compat.js"></script>
+</head>
+<body>
+
+<div id="app-root">
+    
+    <!-- LOGIN SCREEN -->
+    <div class="screen-stack login-screen active" id="scrLogin">
+        <div style="text-align:center;color:white;margin-bottom:30px;">
+            <h1 style="font-size:48px;font-weight:800;">KZ</h1>
+            <p style="opacity:0.8">Коломенский завод • Мессенджер</p>
+        </div>
+        
+        <div class="login-card" id="cardLogin">
+            <div class="login-error" id="errLogin"></div>
+            <form onsubmit="doLogin(event)">
+                <input type="text" class="login-input" placeholder="Табельный номер (KZ-XXXX)" id="inpBadge" required>
+                <input type="password" class="login-input" placeholder="Пароль" id="inpPass" required>
+                <button type="submit" class="login-btn">ВОЙТИ</button>
+            </form>
+            <div style="text-align:center;color:rgba(255,255,255,0.7);margin-top:16px;font-size:14px;cursor:pointer;" onclick="toggleAuthMode()">
+                Нет аккаунта? <span style="color:white;text-decoration:underline;">Регистрация</span>
+            </div>
+        </div>
+
+        <div class="login-card hidden" id="cardReg">
+            <div class="login-error" id="errReg"></div>
+            <form onsubmit="doRegister(event)">
+                <input type="text" class="login-input" placeholder="ФИО" id="regName" required>
+                <input type="text" class="login-input" placeholder="Подразделение" id="regDept" required>
+                <input type="text" class="login-input" placeholder="Табельный номер" id="regBadge" required>
+                <input type="password" class="login-input" placeholder="Пароль (мин 6)" id="regPass" required minlength="6">
+                <button type="submit" class="login-btn">СОЗДАТЬ АККАУНТ</button>
+            </form>
+            <div style="text-align:center;color:rgba(255,255,255,0.7);margin-top:16px;font-size:14px;cursor:pointer;" onclick="toggleAuthMode()">
+                ← Назад ко входу
+            </div>
+        </div>
+    </div>
+
+    <!-- HOME SCREEN -->
+    <div class="screen-stack" id="scrHome">
+        <div class="home-header">
+            <div class="home-title" id="lblTitle">Чаты</div>
+            <div style="display:flex;gap:16px;">
+                <button onclick="openMyProfile()" style="font-size:20px;">👤</button>
+                <button onclick="toggleTheme()" style="font-size:20px;">🌙</button>
+                <button onclick="logout()" style="color:var(--danger);font-size:14px;font-weight:600;">Выйти</button>
+            </div>
+        </div>
+        <div class="search-field">
+            <span>🔍</span>
+            <input type="text" placeholder="Поиск..." id="inpSearch" oninput="renderCurrentTab()">
+        </div>
+        <div class="scroll-area" id="mainList"></div>
+        <div class="tab-bar">
+            <button class="tab-btn active" onclick="switchTab('chats', this)">💬<br>Чаты<span class="badge-dot hidden" id="dotChats"></span></button>
+            <button class="tab-btn" onclick="switchTab('contacts', this)">👥<br>Контакты</button>
+            <button class="tab-btn" onclick="switchTab('tasks', this)">✅<br>Задачи<span class="badge-dot hidden" id="dotTasks"></span></button>
+        </div>
+        <button class="fab hidden" id="btnFab" onclick="openTaskSheet()">+</button>
+    </div>
+
+    <!-- CHAT SCREEN -->
+    <div class="screen-stack" id="scrChat">
+        <div class="chat-header">
+            <button class="back-arrow" onclick="closeChat()">‹</button>
+            <div class="avatar" style="width:36px;height:36px;font-size:14px;" id="hdrAvatar">?</div>
+            <div style="flex:1;">
+                <div style="font-weight:600;font-size:16px;" id="hdrName">...</div>
+                <div style="font-size:12px;color:var(--success);" id="hdrStatus">В сети</div>
+            </div>
+        </div>
+        <div class="msg-list" id="msgContainer"></div>
+        <div class="composer">
+            <label style="font-size:24px;color:var(--text-secondary);padding:4px;">📎<input type="file" id="fileInput" class="hidden" onchange="sendFile(this)"></label>
+            <textarea class="comp-input" id="msgInput" rows="1" placeholder="Сообщение..." onkeydown="handleKey(event)"></textarea>
+            <button class="send-btn" onclick="sendMessage()">➤</button>
+        </div>
+    </div>
+
+</div>
+
+<!-- TASK SHEET -->
+<div class="sheet-overlay" id="taskSheet" onclick="if(event.target===this)this.classList.remove('show')">
+    <div class="sheet-content">
+        <div class="handle"></div>
+        <h3 style="margin-bottom:20px;">Новая задача</h3>
+        <form onsubmit="createTask(event)">
+            <div class="form-group"><label class="form-label">Заголовок</label><input type="text" class="form-control" id="tkTitle" required></div>
+            <div class="form-group"><label class="form-label">Описание</label><textarea class="form-control" id="tkDesc" rows="3"></textarea></div>
+            <div class="form-group"><label class="form-label">Исполнитель</label><select class="form-control" id="tkAssignee" required></select></div>
+            <button type="submit" class="btn-primary">Создать</button>
+        </form>
+    </div>
+</div>
+
+<!-- PROFILE SHEET -->
+<div class="sheet-overlay" id="profSheet" onclick="if(event.target===this)this.classList.remove('show')">
+    <div class="sheet-content" style="text-align:center;">
+        <div class="handle"></div>
+        <div class="avatar" style="width:70px;height:70px;font-size:28px;margin:0 auto 12px;" id="pfAvatar">??</div>
+        <h2 style="font-size:20px;margin-bottom:4px;" id="pfName">Имя</h2>
+        <p style="color:var(--text-secondary);font-size:14px;margin-bottom:20px;" id="pfRole">Должность</p>
+        <div style="background:var(--bg-surface);border-radius:12px;padding:16px;text-align:left;margin-bottom:20px;">
+            <div style="display:flex;justify-content:space-between;margin-bottom:8px;"><span style="color:var(--text-secondary)">Отдел:</span><span id="pfDept">-</span></div>
+            <div style="display:flex;justify-content:space-between;"><span style="color:var(--text-secondary)">Номер:</span><span id="pfBadge">-</span></div>
+        </div>
+        <button class="btn-primary" id="btnPfAction" onclick="startDMFromProfile()">Написать сообщение</button>
+    </div>
+</div>
+
+<div class="toast" id="toastEl"></div>
+
+<script>
+// ==========================================
+// CORE ENGINE v6.0 (MAXIMUM STABILITY)
+// ==========================================
+
+const CONFIG = {
+    apiKey: "AIzaSyDyuK9iREDYiA-NmjeWgECT2np57V-m86s",
+    authDomain: "kz-messenger-test.firebaseapp.com",
+    projectId: "kz-messenger-test",
+    storageBucket: "kz-messenger-test.firebasestorage.app",
+    messagingSenderId: "60956478899",
+    appId: "1:60956478899:web:43fbbc9d9755e967b68fc6"
+};
+
+let db, storage, user = null;
+let usersCache = {}, chatsCache = [], tasksCache = [];
+let currentTab = 'chats', activeChatId = null;
+let unsubscribers = {};
+let pendingUserId = null; // For profile sheet action
+
+window.onload = async () => {
+    try {
+        const app = firebase.initializeApp(CONFIG);
+        db = app.firestore();
+        storage = app.storage();
+        
+        // Restore session
+        const saved = localStorage.getItem('kz_user_v6');
+        if(saved) {
+            user = JSON.parse(saved);
+            await initApp();
+            showScreen('scrHome');
+        } else {
+            showScreen('scrLogin');
+        }
+    } catch(e) { alert("Ошибка запуска: " + e.message); }
+};
+
+function toggleAuthMode() {
+    document.getElementById('cardLogin').classList.toggle('hidden');
+    document.getElementById('cardReg').classList.toggle('hidden');
+}
+
+async function doLogin(e) {
+    e.preventDefault();
+    const badge = document.getElementById('inpBadge').value.toUpperCase().trim();
+    const pass = document.getElementById('inpPass').value;
+    const errBox = document.getElementById('errLogin');
+    errBox.style.display = 'none';
+
+    try {
+        const snap = await db.collection("users").where("badge", "==", badge).limit(1).get();
+        if(snap.empty) throw new Error("Не найдено");
+        
+        const data = snap.docs[0].data();
+        if(data.passHash && data.passHash !== btoa(pass)) throw new Error("Неверный пароль");
+
+        loginUser({ id: snap.docs[0].id, ...data });
+    } catch(err) {
+        errBox.innerText = err.message;
+        errBox.style.display = 'block';
+    }
+}
+
+async function doRegister(e) {
+    e.preventDefault();
+    const name = document.getElementById('regName').value.trim();
+    const dept = document.getElementById('regDept').value.trim();
+    const badge = document.getElementById('regBadge').value.toUpperCase().trim();
+    const pass = document.getElementById('regPass').value;
+    const errBox = document.getElementById('errReg');
+    errBox.style.display = 'none';
+
+    try {
+        const exists = await db.collection("users").where("badge", "==", badge).limit(1).get();
+        if(!exists.empty) throw new Error("Номер занят");
+
+        const newUser = { badge, name, dept, role:'employee', passHash:btoa(pass), createdAt: firebase.firestore.FieldValue.serverTimestamp() };
+        const ref = await db.collection("users").add(newUser);
+        
+        await joinGeneralChannel(ref.id);
+        loginUser({ id: ref.id, ...newUser });
+    } catch(err) {
+        errBox.innerText = err.message;
+        errBox.style.display = 'block';
+    }
+}
+
+function loginUser(u) {
+    user = u;
+    delete user.passHash; // Security cleanup
+    localStorage.setItem('kz_user_v6', JSON.stringify(user));
+    initApp();
+    showScreen('scrHome');
+    toast(`Привет, ${u.name.split(' ')[0]}!`);
+}
+
+function logout() {
+    Object.values(unsubscribers).forEach(fn => fn && fn());
+    localStorage.removeItem('kz_user_v6');
+    location.reload();
+}
+
+async function joinGeneralChannel(uid) {
+    const col = db.collection("chats");
+    const q = col.where("type","==","channel").where("title","==","Общий завод");
+    const snap = await q.get();
+    if(snap.empty) {
+        await col.add({ type:'channel', title:'Общий завод', members:[uid], lastMessageTime: firebase.firestore.FieldValue.serverTimestamp() });
+    } else {
+        const doc = snap.docs[0];
+        const mem = doc.data().members || [];
+        if(!mem.includes(uid)) await doc.ref.update({ members: [...mem, uid] });
+    }
+}
+
+async function initApp() {
+    // Load Users
+    const us = await db.collection("users").get();
+    us.forEach(d => usersCache[d.id] = {id:d.id,...d.data()});
+    
+    // Subscribe Chats
+    unsubscribers.chats = db.collection("chats").where("members","array-contains",user.id).onSnapshot(snap => {
+        chatsCache = snap.docs.map(d=>({id:d.id,...d.data()})).sort((a,b)=>(b.lastMessageTime?.seconds||0)-(a.lastMessageTime?.seconds||0));
+        renderCurrentTab();
+    });
+
+    // Subscribe Tasks (Client-side filtering to avoid Index errors)
+    unsubscribers.tasks = db.collection("tasks").onSnapshot(snap => {
+        const all = snap.docs.map(d=>({id:d.id,...d.data()}));
+        tasksCache = all.filter(t => t.creatorId === user.id || t.assigneeId === user.id);
+        renderCurrentTab();
+    });
+}
+
+// --- NAVIGATION ---
+function showScreen(id) {
+    document.querySelectorAll('.screen-stack').forEach(s => s.classList.remove('active'));
+    document.getElementById(id).classList.add('active');
+}
+
+function switchTab(tab, btn) {
+    currentTab = tab;
+    document.querySelectorAll('.tab-btn').forEach(b=>b.classList.remove('active'));
+    btn.classList.add('active');
+    document.getElementById('lblTitle').innerText = tab==='chats'?'Чаты':tab==='contacts'?'Контакты':'Задачи';
+    document.getElementById('btnFab').classList.toggle('hidden', tab!=='tasks');
+    renderCurrentTab();
+}
+
+function closeChat() {
+    if(unsubscribers.msgs) unsubscribers.msgs();
+    activeChatId = null;
+    showScreen('scrHome');
+}
+
+// --- RENDERING ---
+function renderCurrentTab() {
+    const list = document.getElementById('mainList');
+    list.innerHTML = '';
+    const query = document.getElementById('inpSearch').value.toLowerCase();
+
+    if(currentTab === 'chats') {
+        const items = chatsCache.filter(c => c.type === 'dm' || c.type === 'channel');
+        if(items.length===0) list.innerHTML = '<div class="empty-view">Нет чатов</div>';
+        items.forEach(c => list.appendChild(createChatItem(c)));
+    } 
+    else if(currentTab === 'contacts') {
+        const others = Object.values(usersCache).filter(u => u.id !== user.id && (!query || u.name.toLowerCase().includes(query)));
+        if(others.length===0) list.innerHTML = '<div class="empty-view">Нет контактов</div>';
+        others.forEach(u => list.appendChild(createContactItem(u)));
+    }
+    else if(currentTab === 'tasks') {
+        const filtered = tasksCache.filter(t => !query || t.title.toLowerCase().includes(query));
+        if(filtered.length===0) list.innerHTML = '<div class="empty-view">Нет задач</div>';
+        filtered.forEach(t => list.appendChild(createTaskItem(t)));
+    }
+}
+
+function createChatItem(chat) {
+    const div = document.createElement('div');
+    div.className = 'list-item';
+    let name = chat.title || 'Диалог';
+    let sub = chat.lastMessageText || 'Нет сообщений';
+    let avColor = '#607d8b';
+    let initials = '#';
+
+    if(chat.type === 'dm') {
+        const oid = chat.members.find(m=>m!==user.id);
+        const ou = usersCache[oid];
+        name = ou?.name || 'Неизвестный';
+        sub = ou?.dept || '';
+        avColor = hashColor(oid);
+        initials = getInitials(name);
+    }
+
+    div.innerHTML = `<div class="avatar" style="background:${avColor}">${initials}</div><div class="item-body"><div class="item-name">${esc(name)}</div><div class="item-sub">${esc(sub)}</div></div>`;
+    div.onclick = () => openChat(chat.id);
+    return div;
+}
+
+function createContactItem(u) {
+    const div = document.createElement('div');
+    div.className = 'list-item';
+    div.innerHTML = `<div class="avatar" style="background:${hashColor(u.id)}">${getInitials(u.name)}</div><div class="item-body"><div class="item-name">${esc(u.name)}</div><div class="item-sub">${esc(u.dept)}</div></div>`;
+    div.onclick = () => {
+        pendingUserId = u.id;
+        document.getElementById('pfAvatar').textContent = getInitials(u.name);
+        document.getElementById('pfAvatar').style.background = hashColor(u.id);
+        document.getElementById('pfName').textContent = u.name;
+        document.getElementById('pfRole').textContent = u.role;
+        document.getElementById('pfDept').textContent = u.dept;
+        document.getElementById('pfBadge').textContent = u.badge;
+        document.getElementById('btnPfAction').onclick = startDMFromProfile;
+        document.getElementById('profSheet').classList.add('show');
+    };
+    return div;
+}
+
+function createTaskItem(t) {
+    const div = document.createElement('div');
+    div.className = 'task-card';
+    const stClass = t.status==='done'?'st-done':t.status==='progress'?'st-prog':'st-new';
+    const stTxt = t.status==='done'?'Готово':t.status==='progress'?'В работе':'Новая';
+    const assignee = usersCache[t.assigneeId]?.name.split(' ')[0] || '?';
+    
+    div.innerHTML = `
+        <div class="task-head"><span>#${t.id.slice(-4)}</span><span class="status-chip ${stClass}">${stTxt}</span></div>
+        <div style="font-weight:600;margin-bottom:4px;">${esc(t.title)}</div>
+        <div style="font-size:13px;color:var(--text-secondary);margin-bottom:8px;">${esc(t.description||'')}</div>
+        <div style="font-size:12px;color:var(--text-secondary);">Исп: ${esc(assignee)}</div>
+    `;
+    div.onclick = () => cycleTask(t.id, t.status);
+    return div;
+}
+
+// --- CHAT LOGIC ---
+function openChat(cid) {
+    activeChatId = cid;
+    const chat = chatsCache.find(c=>c.id===cid);
+    if(chat) {
+        let n = chat.title;
+        if(chat.type==='dm') n = usersCache[chat.members.find(m=>m!==user.id)]?.name;
+        document.getElementById('hdrName').textContent = n;
+        document.getElementById('hdrAvatar').textContent = getInitials(n);
+        document.getElementById('hdrAvatar').style.background = hashColor(cid);
+    }
+    showScreen('scrChat');
+    
+    if(unsubscribers.msgs) unsubscribers.msgs();
+    unsubscribers.msgs = db.collection("messages").where("chatId","==",cid).orderBy("createdAt","asc").limit(100).onSnapshot(snap => {
+        const cont = document.getElementById('msgContainer');
+        cont.innerHTML = '';
+        snap.docs.forEach(doc => {
+            const m = doc.data();
+            const isMe = m.senderId === user.id;
+            const time = m.createdAt ? new Date(m.createdAt.seconds*1000).toLocaleTimeString([],{hour:'2-digit',minute:'2-digit'}) : '';
+            
+            let html = '';
+            if(m.imageUrl) html += `<img src="${m.imageUrl}" style="max-width:100%;border-radius:8px;margin-top:4px;display:block;">`;
+            if(m.fileName) html += `<div style="background:rgba(0,0,0,0.05);padding:8px;border-radius:8px;margin-top:4px;">📄 ${esc(m.fileName)}</div>`;
+            if(m.text) html += esc(m.text);
+            
+            const bubble = document.createElement('div');
+            bubble.className = `bubble ${isMe?'me':'other'}`;
+            bubble.innerHTML = `${html}<div style="font-size:10px;opacity:0.6;text-align:right;margin-top:2px;">${time}</div>`;
+            cont.appendChild(bubble);
+        });
+        cont.scrollTop = cont.scrollHeight;
+    }, err => {
+        // Fallback without orderBy
+        unsubscribers.msgs = db.collection("messages").where("chatId","==",cid).limit(100).onSnapshot(snap => {
+             const msgs = snap.docs.map(d=>({id:d.id,...d.data()})).sort((a,b)=>(a.createdAt?.seconds||0)-(b.createdAt?.seconds||0));
+             const cont = document.getElementById('msgContainer');
+             cont.innerHTML='';
+             msgs.forEach(m => {
+                 const isMe = m.senderId === user.id;
+                 const bubble = document.createElement('div');
+                 bubble.className = `bubble ${isMe?'me':'other'}`;
+                 bubble.textContent = m.text;
+                 cont.appendChild(bubble);
+             });
+        });
+    });
+}
+
+async function sendMessage() {
+    const inp = document.getElementById('msgInput');
+    const txt = inp.value.trim();
+    if(!txt || !activeChatId) return;
+    inp.value = '';
+    
+    await db.collection("messages").add({ chatId:activeChatId, senderId:user.id, text:txt, createdAt:firebase.firestore.FieldValue.serverTimestamp() });
+    await db.collection("chats").doc(activeChatId).update({ lastMessageText:txt, lastMessageTime:firebase.firestore.FieldValue.serverTimestamp() });
+}
+
+function handleKey(e) { if(e.key==='Enter'&&!e.shiftKey){e.preventDefault();sendMessage();} }
+
+async function sendFile(input) {
+    const f = input.files[0];
+    if(!f||!activeChatId)return;
+    const path = `uploads/${Date.now()}_${f.name}`;
+    const task = storage.ref(path).put(f);
+    task.on('state_changed',null,null,async()=>{
+        const url = await task.snapshot.ref.getDownloadURL();
+        const isImg = f.type.startsWith('image/');
+        await db.collection("messages").add({ chatId:activeChatId,senderId:user.id,text:'',imageUrl:isImg?url:null,fileName:f.name,fileSize:(f.size/1024).toFixed(1)+' KB',createdAt:firebase.firestore.FieldValue.serverTimestamp() });
+        input.value='';
+    });
+}
+
+// --- TASKS & UTILS ---
+function openTaskSheet() {
+    const sel = document.getElementById('tkAssignee');
+    sel.innerHTML = '<option value="">Выберите...</option>';
+    Object.values(usersCache).forEach(u=>{if(u.id!==user.id)sel.innerHTML+=`<option value="${u.id}">${u.name}</option>`;});
+    document.getElementById('taskSheet').classList.add('show');
+}
+
+async function createTask(e) {
+    e.preventDefault();
+    const title = document.getElementById('tkTitle').value;
+    const desc = document.getElementById('tkDesc').value;
+    const aid = document.getElementById('tkAssignee').value;
+    if(!title||!aid)return alert("Заполните поля");
+    
+    await db.collection("tasks").add({ title, description:desc, creatorId:user.id, assigneeId:aid, status:'new', createdAt:firebase.firestore.FieldValue.serverTimestamp() });
+    document.getElementById('taskSheet').classList.remove('show');
+    document.getElementById('tkTitle').value='';
+    toast("Задача создана");
+}
+
+async function cycleTask(id, curr) {
+    const next = curr==='new'?'progress':curr==='progress'?'done':'new';
+    await db.collection("tasks").doc(id).update({status:next});
+}
+
+function startDMFromProfile() {
+    document.getElementById('profSheet').classList.remove('show');
+    if(pendingUserId) findOrCreateDM(pendingUserId);
+}
+
+async function findOrCreateDM(uid) {
+    const ex = chatsCache.find(c=>c.type==='dm'&&c.members.includes(uid)&&c.members.includes(user.id));
+    if(ex) openChat(ex.id);
+    else {
+        const sorted = [user.id,uid].sort();
+        const ref = await db.collection("chats").add({ type:'dm',members:sorted,lastMessageTime:firebase.firestore.FieldValue.serverTimestamp(),lastMessageText:'' });
+        openChat(ref.id);
+    }
+}
+
+function openMyProfile() {
+    pendingUserId = user.id;
+    document.getElementById('pfAvatar').textContent = getInitials(user.name);
+    document.getElementById('pfAvatar').style.background = hashColor(user.id);
+    document.getElementById('pfName').textContent = user.name;
+    document.getElementById('pfRole').textContent = user.role;
+    document.getElementById('pfDept').textContent = user.dept;
+    document.getElementById('pfBadge').textContent = user.badge;
+    document.getElementById('btnPfAction').onclick = () => { document.getElementById('profSheet').classList.remove('show'); };
+    document.getElementById('profSheet').classList.add('show');
+}
+
+function toggleTheme() {
+    const h = document.documentElement;
+    const d = h.getAttribute('data-theme')==='dark';
+    if(d) h.removeAttribute('data-theme'); else h.setAttribute('data-theme','dark');
+    localStorage.setItem('kz_theme', d?'light':'dark');
+}
+if(localStorage.getItem('kz_theme')==='dark') document.documentElement.setAttribute('data-theme','dark');
+
+function esc(t){return String(t).replace(/[&<>]/g,m=>({'&':'&amp;','<':'&lt;','>':'&gt;'}[m]));}
+function getInitials(n){return n?n.split(' ').map(x=>x[0]).join('').substring(0,2).toUpperCase():'?';}
+function hashColor(s){const p=['#0057b8','#e91e63','#9c27b0','#ff9800','#4caf50'];let h=0;for(let i=0;i<s.length;i++)h=s.charCodeAt(i)+((h<<5)-h);return p[Math.abs(h)%p.length];}
+function toast(m){const t=document.getElementById('toastEl');t.innerText=m;t.classList.add('show');setTimeout(()=>t.classList.remove('show'),3000);}
+</script>
+</body>
+</html>
