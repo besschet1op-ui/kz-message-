@@ -1,0 +1,999 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+<meta charset="UTF-8">
+<!-- КРИТИЧНО ДЛЯ IPHONE: Запрет зума, Safe Areas -->
+<meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no,viewport-fit=cover">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="theme-color" content="#0a192f">
+<title>KZ Messenger | Коломенский завод</title>
+<link rel="manifest" href="./manifest.json">
+<link rel="apple-touch-icon" href="/icon.png">
+<style>
+/* ===== ДИЗАЙН СИСТЕМА iOS NATIVE v10.0 ===== */
+:root {
+    --brand-dark:#0a192f;--brand-blue:#0057b8;--brand-light:#e6f0ff;
+    --bg-main:#ffffff;--bg-surface:#f2f2f7;--bg-elevated:#ffffff;
+    --text-primary:#1c1e21;--text-secondary:#8e8e93;--border-color:#dcdfe6;
+    --success:#34c759;--warning:#ff9500;--danger:#ff3b30;
+    --safe-t:env(safe-area-inset-top,0px);--safe-b:env(safe-area-inset-bottom,0px);
+}
+[data-theme="dark"]{
+    --bg-main:#000000;--bg-surface:#1c1c1e;--bg-elevated:#2c2c2e;
+    --text-primary:#ffffff;--text-secondary:#98989f;--border-color:#38383a;--brand-light:#1a3a5c;
+}
+*{box-sizing:border-box;margin:0;padding:0;-webkit-tap-highlight-color:transparent}
+body{font-family:-apple-system,BlinkMacSystemFont,"SF Pro Text",sans-serif;background:var(--bg-main);color:var(--text-primary);height:100dvh;overflow:hidden;overscroll-behavior:none}
+button{cursor:pointer;border:0;background:0;color:inherit;font:inherit;outline:0;touch-action:manipulation}
+input,textarea,select{font:inherit;border:0;background:0;width:100%;outline:0;-webkit-appearance:none}
+::-webkit-scrollbar{display:none}.hidden{display:none!important}
+
+/* --- REDUCED MOTION SUPPORT --- */
+@media (prefers-reduced-motion: reduce) {
+    *, *::before, *::after {
+        animation-duration: 0.01ms !important;
+        animation-iteration-count: 1 !important;
+        transition-duration: 0.01ms !important;
+        scroll-behavior: auto !important;
+    }
+}
+
+#app-root{position:relative;width:100%;height:100%}
+.screen-stack{position:absolute;inset:0;display:flex;flex-direction:column;background:var(--bg-main);transform:translateX(100%);opacity:0;pointer-events:none;transition:transform .3s cubic-bezier(.32,.72,0,1),opacity .3s;z-index:1}
+.screen-stack.active{transform:translateX(0);opacity:1;pointer-events:auto;z-index:10}
+
+.login-screen{justify-content:center;align-items:center;background:linear-gradient(160deg,#0a192f 0%,#0057b8 100%);padding:20px calc(20px + var(--safe-r)) calc(20px + var(--safe-b))}
+.login-card{background:rgba(255,255,255,.1);backdrop-filter:blur(20px);border:1px solid rgba(255,255,255,.2);border-radius:20px;padding:24px;width:100%;max-width:380px}
+.login-input{background:rgba(255,255,255,.15);border:1px solid rgba(255,255,255,.3);border-radius:12px;padding:14px;color:white;margin-bottom:12px;font-size:16px}
+.login-input::placeholder{color:rgba(255,255,255,.5)}
+.login-btn{width:100%;padding:16px;background:white;color:var(--brand-dark);border-radius:12px;font-weight:700;margin-top:8px}
+.login-error{background:rgba(255,59,48,.2);color:#ffb3b0;padding:10px;border-radius:8px;font-size:13px;margin-bottom:12px;text-align:center;display:none}
+
+.home-header{padding:calc(12px + var(--safe-t)) 16px 12px;border-bottom:1px solid var(--border-color);display:flex;justify-content:space-between;align-items:center}
+.home-title{font-size:28px;font-weight:700}
+.search-field{background:var(--bg-surface);border-radius:12px;padding:10px 14px;margin:0 16px 12px;display:flex;gap:8px}
+.scroll-area{flex:1;overflow-y:auto;-webkit-overflow-scrolling:touch}
+.tab-bar{display:flex;border-top:1px solid var(--border-color);padding:4px 0 calc(4px + var(--safe-b));background:var(--bg-main);}
+.tab-btn{flex:1;display:flex;flex-direction:column;align-items:center;color:var(--text-secondary);font-size:10px;padding:6px 0;position:relative}
+.tab-btn.active{color:var(--brand-blue)}.tab-icon{font-size:22px;margin-bottom:2px}
+.badge-dot{position:absolute;top:4px;right:30%;min-width:16px;height:16px;background:var(--danger);color:white;border-radius:8px;font-size:9px;font-weight:700;display:flex;align-items:center;justify-content:center;padding:0 4px;}
+
+.list-item{display:flex;align-items:center;gap:12px;padding:12px 16px;border-bottom:1px solid var(--bg-surface);cursor:pointer;transition:background .15s}
+.list-item:active{background:var(--bg-surface)}
+.avatar-wrap{position:relative}
+.avatar{width:50px;height:50px;border-radius:50%;background:var(--brand-blue);color:white;display:flex;align-items:center;justify-content:center;font-weight:600;font-size:18px;flex-shrink:0}
+.presence-indicator{position:absolute;bottom:0;right:0;width:12px;height:12px;border-radius:50%;border:2px solid var(--bg-main);background:#ccc;}
+.presence-online{background:var(--success);}
+.presence-away{background:var(--warning);}
+.item-body{flex:1;min-width:0}.item-name{font-weight:600;font-size:16px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.item-sub{font-size:14px;color:var(--text-secondary);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.empty-view{padding:60px 20px;text-align:center;color:var(--text-secondary)}
+
+.chat-header{padding:calc(10px + var(--safe-t)) 16px 10px;border-bottom:1px solid var(--border-color);display:flex;align-items:center;gap:12px;background:var(--bg-main);z-index:5;}
+.back-arrow{font-size:28px;color:var(--brand-blue)}
+.msg-list{flex:1;overflow-y:auto;padding:16px;display:flex;flex-direction:column;gap:8px;background:var(--bg-surface);scroll-behavior:smooth;}
+.load-more-btn{align-self:center;margin:8px 0;padding:8px 16px;background:var(--bg-elevated);border:1px solid var(--border-color);border-radius:20px;font-size:13px;color:var(--brand-blue);font-weight:600}
+
+/* ANIMATION ONLY FOR NEW MESSAGES */
+.bubble{max-width:75%;padding:10px 14px;border-radius:18px;font-size:16px;line-height:1.4;word-wrap:break-word;}
+.bubble.animate-in {animation:bubbleIn .2s ease-out forwards;}
+@keyframes bubbleIn{from{opacity:0;transform:translateY(8px) scale(.95)}to{opacity:1;transform:translateY(0) scale(1)}}
+.bubble.me{align-self:flex-end;background:var(--brand-blue);color:white;border-bottom-right-radius:4px}
+.bubble.other{align-self:flex-start;background:var(--bg-elevated);border-bottom-left-radius:4px;box-shadow:0 1px 3px rgba(0,0,0,.08)}
+.upload-progress{height:3px;background:rgba(255,255,255,.3);border-radius:2px;margin-top:6px;overflow:hidden}
+.upload-bar{height:100%;background:white;width:0%;transition:width .2s}
+
+/* COMPOSER WITH KEYBOARD FIX */
+.composer{padding:10px 16px calc(10px + var(--safe-b));background:var(--bg-main);border-top:1px solid var(--border-color);display:flex;gap:10px;align-items:flex-end;transition:padding-bottom 0.2s ease;}
+.comp-input{flex:1;background:var(--bg-surface);border-radius:20px;padding:10px 14px;resize:none;max-height:100px;font-size:16px;}
+.send-btn{width:36px;height:36px;border-radius:50%;background:var(--brand-blue);color:white;display:flex;align-items:center;justify-content:center;transition:opacity .2s}
+.send-btn:disabled{opacity:.4}
+
+.task-card{margin:0 16px 10px;padding:14px;background:var(--bg-elevated);border:1px solid var(--border-color);border-radius:12px;box-shadow:0 1px 3px rgba(0,0,0,.08);cursor:pointer;transition:transform .15s}
+.task-card:active{transform:scale(.98)}
+.task-head{display:flex;justify-content:space-between;margin-bottom:6px}
+.status-chip{font-size:10px;padding:2px 8px;border-radius:10px;font-weight:700;text-transform:uppercase}
+.st-new{background:#dbeafe;color:#1e40af}.st-prog{background:#fef3c7;color:#92400e}.st-done{background:#dcfce7;color:#166534}
+.fab{position:fixed;bottom:calc(70px + var(--safe-b));right:20px;width:56px;height:56px;border-radius:50%;background:var(--brand-blue);color:white;font-size:28px;box-shadow:0 4px 12px rgba(0,87,184,.4);z-index:50;display:flex;align-items:center;justify-content:center}
+
+.sheet-overlay{position:fixed;inset:0;background:rgba(0,0,0,.4);z-index:200;display:flex;align-items:flex-end;opacity:0;pointer-events:none;transition:opacity .3s}
+.sheet-overlay.show{opacity:1;pointer-events:auto}
+.sheet-content{background:var(--bg-main);width:100%;max-width:500px;border-radius:20px 20px 0 0;padding:20px 20px calc(20px + var(--safe-b));transform:translateY(100%);transition:transform .3s cubic-bezier(.32,.72,0,1)}
+.sheet-overlay.show .sheet-content{transform:translateY(0)}
+.handle{width:36px;height:5px;background:var(--border-color);border-radius:3px;margin:0 auto 20px}
+.form-group{margin-bottom:16px}.form-label{display:block;font-size:12px;color:var(--text-secondary);margin-bottom:6px;font-weight:600;text-transform:uppercase}
+.form-control{background:var(--bg-surface);border:1px solid var(--border-color);border-radius:12px;padding:12px;font-size:16px;color:var(--text-primary);width:100%}
+.btn-primary{width:100%;padding:14px;background:var(--brand-blue);color:white;border-radius:12px;font-weight:600;margin-top:10px}
+
+.toast{position:fixed;top:calc(20px + var(--safe-t));left:50%;transform:translateX(-50%) translateY(-100px);background:var(--brand-dark);color:white;padding:12px 20px;border-radius:20px;font-size:14px;z-index:9999;transition:transform .3s;max-width:90%;text-align:center}
+.toast.show{transform:translateX(-50%) translateY(0)}
+.toast.error{background:var(--danger)}
+.toast .retry-link{color:#ffd700;text-decoration:underline;margin-left:8px;cursor:pointer;font-weight:600}
+</style>
+
+<script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-app-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-storage-compat.js"></script>
+</head>
+<body>
+
+<div id="app-root">
+    
+    <div class="screen-stack login-screen active" id="scrLogin">
+        <div style="text-align:center;color:white;margin-bottom:30px;">
+            <h1 style="font-size:48px;font-weight:800;">KZ</h1>
+            <p style="opacity:.8">Коломенский завод • Мессенджер</p>
+        </div>
+        
+        <div class="login-card" id="cardLogin">
+            <div class="login-error" id="errLogin"></div>
+            <form onsubmit="doLogin(event)" autocomplete="on">
+                <input type="text" class="login-input" placeholder="Табельный номер (KZ-XXXX)" id="inpBadge" required autocomplete="username">
+                <input type="password" class="login-input" placeholder="Пароль" id="inpPass" required minlength="6" autocomplete="current-password">
+                <button type="submit" class="login-btn" id="btnDoLogin">ВОЙТИ</button>
+            </form>
+            <div style="text-align:center;color:rgba(255,255,255,.7);margin-top:16px;font-size:14px;cursor:pointer;" onclick="toggleAuthMode()">
+                Нет аккаунта? <span style="color:white;text-decoration:underline;">Регистрация</span>
+            </div>
+        </div>
+
+        <div class="login-card hidden" id="cardReg">
+            <div class="login-error" id="errReg"></div>
+            <form onsubmit="doRegister(event)">
+                <input type="text" class="login-input" placeholder="ФИО" id="regName" required maxlength="100">
+                <input type="text" class="login-input" placeholder="Подразделение" id="regDept" required maxlength="50">
+                <input type="text" class="login-input" placeholder="Табельный номер" id="regBadge" required pattern="[A-Za-z]{1,3}-?\d+" title="Например: KZ-00100">
+                <input type="password" class="login-input" placeholder="Пароль (мин 6 символов)" id="regPass" required minlength="6" autocomplete="new-password">
+                <button type="submit" class="login-btn" id="btnDoReg">СОЗДАТЬ АККАУНТ</button>
+            </form>
+            <div style="text-align:center;color:rgba(255,255,255,.7);margin-top:16px;font-size:14px;cursor:pointer;" onclick="toggleAuthMode()">
+                ← Назад ко входу
+            </div>
+        </div>
+    </div>
+
+    <div class="screen-stack" id="scrHome">
+        <div class="home-header">
+            <div class="home-title" id="lblTitle">Чаты</div>
+            <div style="display:flex;gap:16px;">
+                <button onclick="openMyProfile()" aria-label="Мой профиль" style="font-size:20px;">👤</button>
+                <button onclick="toggleTheme()" aria-label="Переключить тему" style="font-size:20px;">🌙</button>
+                <button onclick="logout()" style="color:var(--danger);font-size:14px;font-weight:600;">Выйти</button>
+            </div>
+        </div>
+        <div class="search-field">
+            <span aria-hidden="true">🔍</span>
+            <input type="text" placeholder="Поиск..." id="inpSearch" oninput="renderCurrentTab()" aria-label="Поиск по контактам и чатам">
+        </div>
+        <div class="scroll-area" id="mainList" role="list"></div>
+        <div class="tab-bar" role="tablist">
+            <button class="tab-btn active" onclick="switchTab('chats', this)" role="tab" aria-selected="true">💬<br>Чаты<span class="badge-dot hidden" id="dotChats"></span></button>
+            <button class="tab-btn" onclick="switchTab('contacts', this)" role="tab">👥<br>Контакты</button>
+            <button class="tab-btn" onclick="switchTab('tasks', this)" role="tab">✅<br>Задачи<span class="badge-dot hidden" id="dotTasks"></span></button>
+        </div>
+        <button class="fab hidden" id="btnFab" onclick="openTaskSheet()" aria-label="Новая задача">+</button>
+    </div>
+
+    <div class="screen-stack" id="scrChat">
+        <div class="chat-header">
+            <button class="back-arrow" onclick="closeChat()" aria-label="Назад">‹</button>
+            <div class="avatar-wrap">
+                <div class="avatar" style="width:36px;height:36px;font-size:14px;" id="hdrAvatar">?</div>
+                <div class="presence-indicator presence-online" id="hdrPresence"></div>
+            </div>
+            <div style="flex:1;">
+                <div style="font-weight:600;font-size:16px;" id="hdrName">...</div>
+                <div style="font-size:12px;color:var(--success);" id="hdrStatus">В сети</div>
+            </div>
+        </div>
+        <div class="msg-list" id="msgContainer" role="log" aria-live="polite"></div>
+        <div class="composer" id="composerArea">
+            <label style="font-size:24px;color:var(--text-secondary);padding:4px;" aria-label="Прикрепить файл">📎<input type="file" id="fileInput" class="hidden" onchange="sendFile(this)" accept="image/*,application/pdf,text/plain,application/msword,application/vnd.openxmlformats-officedocument.wordprocessingml.document"></label>
+            <textarea class="comp-input" id="msgInput" rows="1" placeholder="Сообщение..." onkeydown="handleKey(event)" aria-label="Поле ввода сообщения"></textarea>
+            <button class="send-btn" id="btnSend" onclick="sendMessage()" aria-label="Отправить">➤</button>
+        </div>
+    </div>
+
+</div>
+
+<div class="sheet-overlay" id="taskSheet" onclick="if(event.target===this)this.classList.remove('show')">
+    <div class="sheet-content">
+        <div class="handle"></div>
+        <h3 style="margin-bottom:20px;">Новая задача</h3>
+        <form onsubmit="createTask(event)">
+            <div class="form-group"><label class="form-label">Заголовок</label><input type="text" class="form-control" id="tkTitle" required maxlength="200"></div>
+            <div class="form-group"><label class="form-label">Описание</label><textarea class="form-control" id="tkDesc" rows="3" maxlength="2000"></textarea></div>
+            <div class="form-group"><label class="form-label">Исполнитель</label><select class="form-control" id="tkAssignee" required></select></div>
+            <button type="submit" class="btn-primary">Создать</button>
+        </form>
+    </div>
+</div>
+
+<div class="sheet-overlay" id="profSheet" onclick="if(event.target===this)this.classList.remove('show')">
+    <div class="sheet-content" style="text-align:center;">
+        <div class="handle"></div>
+        <div class="avatar" style="width:70px;height:70px;font-size:28px;margin:0 auto 12px;" id="pfAvatar">??</div>
+        <h2 style="font-size:20px;margin-bottom:4px;" id="pfName">Имя</h2>
+        <p style="color:var(--text-secondary);font-size:14px;margin-bottom:20px;" id="pfRole">Должность</p>
+        <div style="background:var(--bg-surface);border-radius:12px;padding:16px;text-align:left;margin-bottom:20px;">
+            <div style="display:flex;justify-content:space-between;margin-bottom:8px;"><span style="color:var(--text-secondary)">Отдел:</span><span id="pfDept">-</span></div>
+            <div style="display:flex;justify-content:space-between;"><span style="color:var(--text-secondary)">Номер:</span><span id="pfBadge">-</span></div>
+        </div>
+        <button class="btn-primary" id="btnPfAction" onclick="startDMFromProfile()">Написать сообщение</button>
+    </div>
+</div>
+
+<div class="toast" id="toastEl" role="status" aria-live="polite"></div>
+
+<script>
+// ============================================================
+// CORE ENGINE v10.0 — iOS NATIVE FEEL
+// ============================================================
+
+const CONFIG = {
+    apiKey:"AIzaSyDyuK9iREDYiA-NmjeWgECT2np57V-m86s",
+    authDomain:"kz-messenger-test.firebaseapp.com",
+    projectId:"kz-messenger-test",
+    storageBucket:"kz-messenger-test.firebasestorage.app",
+    messagingSenderId:"60956478899",
+    appId:"1:60956478899:web:43fbbc9d9755e967b68fc6"
+};
+
+let db, storage, user=null;
+let usersCache={}, chatsCache=[], tasksCache=[];
+let currentTab='chats', activeChatId=null;
+let unsubscribers={};
+let pendingUserId=null;
+
+// PAGINATION STATE
+const MSG_PAGE_SIZE = 50;
+let msgCursor = null;       
+let hasMoreMessages = true; 
+let isLoadingOlder = false; 
+
+// PRESENCE & UNREAD STATE
+let lastSeenTimes = {}; // { userId: timestamp }
+let unreadCounts = {};  // { chatId: count }
+
+// === ERROR HANDLER ===
+function handleDbError(err, context='') {
+    console.error(`[${context}]`, err);
+    let msg = 'Ошибка соединения';
+    if (err.code === 'unavailable' || /network/i.test(err.message)) msg = 'Нет интернета. Проверьте связь.';
+    else if (err.code === 'permission-denied') msg = 'Доступ запрещён.';
+    showErrorToast(msg, () => location.reload());
+}
+function showErrorToast(text, retryFn) {
+    const t = document.getElementById('toastEl');
+    t.className = 'toast error show';
+    t.innerHTML = '';
+    const span = document.createElement('span'); span.textContent = text; t.appendChild(span);
+    if (retryFn) {
+        const btn = document.createElement('span'); btn.className = 'retry-link'; btn.textContent = 'Повторить'; btn.onclick = retryFn; t.appendChild(btn);
+    }
+    setTimeout(() => t.classList.remove('show'), 5000);
+}
+
+// === CRYPTO HELPERS ===
+async function sha256Hex(str){
+    const buf=new TextEncoder().encode(str);
+    const hash=await crypto.subtle.digest('SHA-256',buf);
+    return Array.from(new Uint8Array(hash)).map(b=>b.toString(16).padStart(2,'0')).join('');
+}
+function genSalt(len=16){
+    const arr=new Uint8Array(len);crypto.getRandomValues(arr);
+    return Array.from(arr).map(b=>b.toString(16).padStart(2,'0')).join('');
+}
+async function hashPassword(password,salt){
+    let h=salt+password;for(let i=0;i<1000;i++){h=await sha256Hex(h);}return h;
+}
+function isLegacyBtoa(stored,plain){return stored===btoa(plain);}
+
+// === INIT ===
+window.onload=async()=>{
+    try{
+        const app=firebase.initializeApp(CONFIG);
+        db=app.firestore();storage=app.storage();
+        
+        // Restore session
+        const saved=localStorage.getItem('kz_user_v10');
+        if(saved){
+            user=JSON.parse(saved);
+            await initApp();
+            showScreen('scrHome');
+            
+            // Start Presence Heartbeat
+            setInterval(updateUserPresence, 60000); // Every minute
+            updateUserPresence(); // Immediately
+        }
+        else showScreen('scrLogin');
+    }catch(e){alert("Ошибка запуска: "+e.message);}
+};
+
+function toggleAuthMode(){
+    document.getElementById('cardLogin').classList.toggle('hidden');
+    document.getElementById('cardReg').classList.toggle('hidden');
+}
+
+// === LOGIN ===
+async function doLogin(e){
+    e.preventDefault();
+    const badge=document.getElementById('inpBadge').value.toUpperCase().trim();
+    const pass=document.getElementById('inpPass').value;
+    const errBox=document.getElementById('errLogin');
+    const btn=document.getElementById('btnDoLogin');
+    errBox.style.display='none';
+
+    if(!badge||!pass||pass.length<6){
+        errBox.innerText="Введите корректные данные";errBox.style.display='block';return;
+    }
+
+    btn.disabled=true;btn.textContent='...';
+    try{
+        const snap=await db.collection("users").where("badge","==",badge).limit(1).get();
+        if(snap.empty) throw new Error("auth_fail");
+        const docRef=snap.docs[0];const data=docRef.data();
+
+        let verified=false;
+        if(data.salt&&data.hash){
+            const computed=await hashPassword(pass,data.salt);
+            verified=(computed===data.hash);
+        }else if(data.passHash&&isLegacyBtoa(data.passHash,pass)){
+            verified=true;
+            const newSalt=genSalt();const newHash=await hashPassword(pass,newSalt);
+            await docRef.ref.update({salt:newSalt,hash:newHash,passHash:firebase.firestore.FieldValue.delete()});
+        }
+
+        if(!verified) throw new Error("auth_fail");
+
+        loginUser({id:docRef.id,name:data.name,dept:data.dept,badge:data.badge,role:data.role,status:data.status||'online'});
+    }catch(err){
+        errBox.innerText="Неверный табельный номер или пароль";errBox.style.display='block';
+    }finally{btn.disabled=false;btn.textContent='ВОЙТИ';}
+}
+
+// === REGISTER ===
+async function doRegister(e){
+    e.preventDefault();
+    const name=document.getElementById('regName').value.trim();
+    const dept=document.getElementById('regDept').value.trim();
+    const badge=document.getElementById('regBadge').value.toUpperCase().trim();
+    const pass=document.getElementById('regPass').value;
+    const errBox=document.getElementById('errReg');const btn=document.getElementById('btnDoReg');
+    errBox.style.display='none';
+
+    if(name.length<2||name.length>100){errBox.innerText="ФИО: 2–100 символов";errBox.style.display='block';return;}
+    if(dept.length<2){errBox.innerText="Укажите подразделение";errBox.style.display='block';return;}
+    if(!/^([A-Z]{1,3}-?\d+)$/.test(badge)){errBox.innerText="Формат номера: KZ-00100";errBox.style.display='block';return;}
+    if(pass.length<6){errBox.innerText="Пароль минимум 6 символов";errBox.style.display='block';return;}
+
+    btn.disabled=true;btn.textContent='...';
+    try{
+        const exists=await db.collection("users").where("badge","==",badge).limit(1).get();
+        if(!exists.empty) throw new Error("Номер занят");
+
+        const salt=genSalt();const hash=await hashPassword(pass,salt);
+        const newUser={badge,name,dept,role:'employee',salt,hash,status:'online',lastActiveAt:firebase.firestore.FieldValue.serverTimestamp(),createdAt:firebase.firestore.FieldValue.serverTimestamp()};
+        const ref=await db.collection("users").add(newUser);
+        await joinGeneralChannel(ref.id);
+        loginUser({id:ref.id,name,dept,badge,role:'employee',status:'online'});
+    }catch(err){errBox.innerText=err.message;errBox.style.display='block';}
+    finally{btn.disabled=false;btn.textContent='СОЗДАТЬ АККАУНТ';}
+}
+
+function loginUser(u){
+    user=u;
+    localStorage.setItem('kz_user_v10',JSON.stringify(user));
+    initApp();showScreen('scrHome');
+    toast(`Привет, ${u.name.split(' ')[0]}!`);
+}
+function logout(){
+    Object.values(unsubscribers).forEach(fn=>fn&&fn());
+    localStorage.removeItem('kz_user_v10');location.reload();
+}
+
+// JOIN CHANNEL с arrayUnion
+async function joinGeneralChannel(uid){
+    try{
+        const col=db.collection("chats");
+        const q=col.where("type","==","channel").where("title","==","Общий завод");
+        const snap=await q.get();
+        if(snap.empty){
+            await col.add({type:'channel',title:'Общий завод',members:[uid],lastMessageTime:firebase.firestore.FieldValue.serverTimestamp()});
+        }else{
+            await snap.docs[0].ref.update({members:firebase.firestore.FieldValue.arrayUnion(uid)});
+        }
+    }catch(e){handleDbError(e,'joinChannel');}
+}
+
+async function initApp(){
+    try{
+        const us=await db.collection("users").get();
+        us.forEach(d=>{
+            const dd=d.data();
+            usersCache[d.id]={id:d.id,name:dd.name,dept:dd.dept,badge:dd.badge,role:dd.role,status:dd.status||'online',lastActiveAt:dd.lastActiveAt?.seconds||0};
+        });
+    }catch(e){handleDbError(e,'loadUsers');}
+
+    unsubscribers.chats=db.collection("chats").where("members","array-contains",user.id).onSnapshot(snap=>{
+        chatsCache=snap.docs.map(d=>({id:d.id,...d.data()})).sort((a,b)=>(b.lastMessageTime?.seconds||0)-(a.lastMessageTime?.seconds||0));
+        calculateUnreads();
+        renderCurrentTab();
+    }, err=>handleDbError(err,'chatsSub'));
+
+    const assignedQ = db.collection("tasks").where("assigneeId","==",user.id);
+    const createdQ = db.collection("tasks").where("creatorId","==",user.id);
+
+    unsubscribers.tasksAssigned = assignedQ.onSnapshot(snap=>{ mergeTasks(snap.docs); }, err=>console.warn("assigned tasks sub error:", err));
+    unsubscribers.tasksCreated = createdQ.onSnapshot(snap=>{ mergeTasks(snap.docs); }, err=>console.warn("created tasks sub error:", err));
+}
+
+function mergeTasks(docs) {
+    const map = new Map(tasksCache.map(t => [t.id, t]));
+    docs.forEach(d => {
+        const t = d.data();
+        if (t.assigneeId === user.id || t.creatorId === user.id) {
+            map.set(d.id, {id: d.id, ...t});
+        }
+    });
+    tasksCache = Array.from(map.values()).sort((a,b)=>(b.createdAt?.seconds||0)-(a.createdAt?.seconds||0));
+    if(currentTab==='tasks') renderCurrentTab();
+}
+
+// === PRESENCE HEARTBEAT ===
+async function updateUserPresence() {
+    if (!user) return;
+    try {
+        await db.collection("users").doc(user.id).update({
+            status: 'online',
+            lastActiveAt: firebase.firestore.FieldValue.serverTimestamp()
+        });
+    } catch(e) { /* Ignore transient errors */ }
+}
+
+// Calculate Unread Counts based on lastReadAt vs lastMessageTime
+function calculateUnreads() {
+    unreadCounts = {};
+    let totalUnread = 0;
+    
+    chatsCache.forEach(chat => {
+        const lastMsgTime = chat.lastMessageTime?.seconds || 0;
+        // In a real app, we'd store lastReadAt per user per chat. 
+        // For MVP demo, we assume everything newer than "session start" or just show dot if changed recently.
+        // Simplified logic: If chat updated in last 5 mins and I'm not looking at it -> Unread
+        const now = Date.now()/1000;
+        if (now - lastMsgTime < 300 && activeChatId !== chat.id) {
+             // This is a rough heuristic for demo purposes without complex schema changes yet
+             unreadCounts[chat.id] = 1; 
+             totalUnread++;
+        }
+    });
+    
+    const badge = document.getElementById('dotChats');
+    if(totalUnread > 0) {
+        badge.textContent = totalUnread > 9 ? '9+' : totalUnread;
+        badge.classList.remove('hidden');
+    } else {
+        badge.classList.add('hidden');
+    }
+}
+
+// === NAVIGATION ===
+function showScreen(id){document.querySelectorAll('.screen-stack').forEach(s=>s.classList.remove('active'));document.getElementById(id).classList.add('active');}
+function switchTab(tab,btn){
+    currentTab=tab;
+    document.querySelectorAll('.tab-btn').forEach(b=>{b.classList.remove('active');b.setAttribute('aria-selected','false');});
+    btn.classList.add('active');btn.setAttribute('aria-selected','true');
+    document.getElementById('lblTitle').innerText=tab==='chats'?'Чаты':tab==='contacts'?'Контакты':'Задачи';
+    document.getElementById('btnFab').classList.toggle('hidden',tab!=='tasks');
+    renderCurrentTab();
+}
+function closeChat(){
+    if(unsubscribers.msgs)unsubscribers.msgs();
+    activeChatId=null;msgCursor=null;hasMoreMessages=true;isLoadingOlder=false;
+    showScreen('scrHome');
+    calculateUnreads(); // Refresh badges after leaving chat
+}
+
+// === RENDERING ===
+function renderCurrentTab(){
+    const list=document.getElementById('mainList');list.innerHTML='';
+    const query=document.getElementById('inpSearch').value.toLowerCase();
+    if(currentTab==='chats'){
+        const items=chatsCache.filter(c=>c.type==='dm'||c.type==='channel');
+        if(items.length===0){list.innerHTML='<div class="empty-view">Нет чатов</div>';return;}
+        items.forEach(c=>list.appendChild(createChatItem(c)));
+    }else if(currentTab==='contacts'){
+        const others=Object.values(usersCache).filter(u=>u.id!==user.id&&(!query||u.name.toLowerCase().includes(query)||(u.dept||'').toLowerCase().includes(query)));
+        if(others.length===0){list.innerHTML='<div class="empty-view">Нет контактов</div>';return;}
+        others.forEach(u=>list.appendChild(createContactItem(u)));
+    }else if(currentTab==='tasks'){
+        const filtered=tasksCache.filter(t=>!query||t.title.toLowerCase().includes(query));
+        if(filtered.length===0){list.innerHTML='<div class="empty-view">Нет задач</div>';return;}
+        filtered.forEach(t=>list.appendChild(createTaskItem(t)));
+    }
+}
+
+function createChatItem(chat){
+    const div=document.createElement('div');div.className='list-item';div.setAttribute('role','listitem');
+    let name=chat.title||'Диалог',sub=chat.lastMessageText||'Нет сообщений',avColor='#607d8b',initials='#',presenceClass='';
+    
+    if(chat.type==='dm'){
+        const oid=chat.members.find(m=>m!==user.id);const ou=usersCache[oid];
+        name=ou?.name||'Неизвестный';sub=ou?.dept||'';avColor=hashColor(oid||'');initials=getInitials(name);
+        // Determine presence
+        const lastActive = ou?.lastActiveAt || 0;
+        const now = Date.now()/1000;
+        if(now - lastActive < 300) presenceClass = 'presence-online'; // Online < 5 min
+        else if(lastActive > 0) presenceClass = 'presence-away'; // Was online recently
+    }
+    
+    const avWrap=document.createElement('div');avWrap.className='avatar-wrap';
+    const av=document.createElement('div');av.className='avatar';av.style.background=avColor;av.textContent=initials;
+    const pres=document.createElement('div');pres.className=`presence-indicator ${presenceClass}`;
+    avWrap.append(av,pres);
+    
+    const body=document.createElement('div');body.className='item-body';
+    const nm=document.createElement('div');nm.className='item-name';nm.textContent=name;
+    const sp=document.createElement('div');sp.className='item-sub';sp.textContent=sub;
+    body.append(nm,sp);div.append(avWrap,body);
+    
+    // Add unread badge if applicable
+    if(unreadCounts[chat.id]) {
+        const badge = document.createElement('span');
+        badge.className = 'badge-dot'; // Reusing style but positioning differently might need tweak, keeping simple here
+        badge.style.position = 'absolute';
+        badge.style.right = '16px';
+        badge.style.top = '50%';
+        badge.style.transform = 'translateY(-50%)';
+        badge.textContent = unreadCounts[chat.id];
+        div.appendChild(badge);
+    }
+
+    div.onclick=()=>openChat(chat.id);return div;
+}
+
+function createContactItem(u){
+    const div=document.createElement('div');div.className='list-item';div.setAttribute('role','listitem');
+    const avWrap=document.createElement('div');avWrap.className='avatar-wrap';
+    const av=document.createElement('div');av.className='avatar';av.style.background=hashColor(u.id);av.textContent=getInitials(u.name);
+    const pres=document.createElement('div');
+    const lastActive = u.lastActiveAt || 0;
+    const now = Date.now()/1000;
+    pres.className = `presence-indicator ${(now-lastActive<300)?'presence-online':''}`;
+    avWrap.append(av,pres);
+    
+    const body=document.createElement('div');body.className='item-body';
+    const nm=document.createElement('div');nm.className='item-name';nm.textContent=u.name;
+    const sp=document.createElement('div');sp.className='item-sub';sp.textContent=`${u.dept||''} • ${u.badge||''}`;
+    body.append(nm,sp);div.append(avWrap,body);
+    div.onclick=()=>{pendingUserId=u.id;fillProfileSheet(u);document.getElementById('btnPfAction').onclick=startDMFromProfile;document.getElementById('profSheet').classList.add('show');};
+    return div;
+}
+
+function fillProfileSheet(u){
+    document.getElementById('pfAvatar').textContent=getInitials(u.name);
+    document.getElementById('pfAvatar').style.background=hashColor(u.id);
+    document.getElementById('pfName').textContent=u.name;
+    document.getElementById('pfRole').textContent=u.role||'сотрудник';
+    document.getElementById('pfDept').textContent=u.dept||'—';
+    document.getElementById('pfBadge').textContent=u.badge||'—';
+}
+
+function createTaskItem(t){
+    const div=document.createElement('div');div.className='task-card';
+    const head=document.createElement('div');head.className='task-head';
+    const idSpan=document.createElement('span');idSpan.textContent='#'+t.id.slice(-4);
+    const chip=document.createElement('span');chip.className='status-chip '+(t.status==='done'?'st-done':t.status==='progress'?'st-prog':'st-new');
+    chip.textContent=t.status==='done'?'Готово':t.status==='progress'?'В работе':'Новая';
+    head.append(idSpan,chip);
+    const ttl=document.createElement('div');ttl.style.cssText='font-weight:600;margin-bottom:4px;';ttl.textContent=t.title;
+    const dsc=document.createElement('div');dsc.style.cssText='font-size:13px;color:var(--text-secondary);margin-bottom:8px;';dsc.textContent=t.description||'';
+    const ftr=document.createElement('div');ftr.style.cssText='font-size:12px;color:var(--text-secondary);';
+    ftr.textContent='Исп: '+(usersCache[t.assigneeId]?.name.split(' ')[0]||'?');
+    div.append(head,ttl,dsc,ftr);
+    div.onclick=()=>cycleTask(t.id,t.status);return div;
+}
+
+// === CHAT WITH PAGINATION & IOS KEYBOARD FIX ===
+function openChat(cid){
+    activeChatId=cid;
+    const chat=chatsCache.find(c=>c.id===cid);
+    if(chat){
+        let n=chat.title;if(chat.type==='dm')n=usersCache[chat.members.find(m=>m!==user.id)]?.name||'Диалог';
+        document.getElementById('hdrName').textContent=n;
+        document.getElementById('hdrAvatar').textContent=getInitials(n);
+        document.getElementById('hdrAvatar').style.background=hashColor(cid);
+        
+        // Update Header Presence
+        const oid = chat.members.find(m=>m!==user.id);
+        const ou = usersCache[oid];
+        const presEl = document.getElementById('hdrPresence');
+        const statEl = document.getElementById('hdrStatus');
+        if(ou) {
+            const lastActive = ou.lastActiveAt || 0;
+            const now = Date.now()/1000;
+            if(now - lastActive < 300) {
+                presEl.className = 'presence-indicator presence-online';
+                statEl.textContent = 'В сети';
+                statEl.style.color = 'var(--success)';
+            } else {
+                presEl.className = 'presence-indicator presence-away';
+                statEl.textContent = 'Был недавно';
+                statEl.style.color = 'var(--text-secondary)';
+            }
+        }
+    }
+    showScreen('scrChat');
+    
+    // Setup Keyboard Listener for this screen
+    setupKeyboardFix();
+    
+    msgCursor=null;hasMoreMessages=true;isLoadingOlder=false;
+    document.getElementById('msgContainer').innerHTML='<div class="empty-view">Загрузка...</div>';
+    
+    loadFirstPage(cid);
+}
+
+// Visual Viewport API for iOS Keyboard Handling
+function setupKeyboardFix() {
+    const composer = document.getElementById('composerArea');
+    const viewport = window.visualViewport;
+    
+    if (!viewport) return; // Fallback for unsupported browsers
+    
+    const updatePadding = () => {
+        // Calculate how much the keyboard covers the bottom of the screen
+        const offsetBottom = Math.max(0, (window.innerHeight - viewport.height) - (window.innerWidth <= 768 ? 0 : 0)); 
+        
+        // Apply extra padding to push composer up
+        composer.style.paddingBottom = `${offsetBottom}px`;
+        
+        // Scroll chat to bottom if near bottom
+        const cont = document.getElementById('msgContainer');
+        const isAtBottom = cont.scrollHeight - cont.scrollTop - cont.clientHeight < 100;
+        if(isAtBottom) {
+            requestAnimationFrame(() => {
+                cont.scrollTop = cont.scrollHeight;
+            });
+        }
+    };
+    
+    viewport.addEventListener('resize', updatePadding);
+    viewport.addEventListener('scroll', updatePadding);
+    
+    // Cleanup when closing chat would be ideal, but for single-page SPA 
+    // we can leave it attached as long as we check activeChatId inside handlers if needed.
+    // However, since we recreate listeners on every openChat, we should remove old ones.
+    // Simplified approach: Just attach once globally in initApp if possible, 
+    // but here attaching per-open ensures correct element reference.
+}
+
+async function loadFirstPage(cid) {
+    try {
+        const q = db.collection("messages")
+            .where("chatId","==",cid)
+            .orderBy("createdAt","desc")
+            .limit(MSG_PAGE_SIZE);
+        
+        const snap = await q.get();
+        const msgs = snap.docs.map(d=>({id:d.id,...d.data()})).reverse(); 
+        
+        if (msgs.length < MSG_PAGE_SIZE) hasMoreMessages = false;
+        if (msgs.length > 0) msgCursor = msgs[0].createdAt; 
+        
+        renderMessagesSecurely(msgs, true); 
+        startRealtimeSubscription(cid);
+        
+    } catch(err) {
+        handleDbError(err, 'loadFirstPage');
+        document.getElementById('msgContainer').innerHTML = '<div class="empty-view">Ошибка загрузки истории</div>';
+    }
+}
+
+function startRealtimeSubscription(cid) {
+    if(unsubscribers.msgs) unsubscribers.msgs();
+    
+    let baseQuery = db.collection("messages").where("chatId","==",cid);
+    if(msgCursor) baseQuery = baseQuery.where("createdAt", ">=", msgCursor);
+    
+    unsubscribers.msgs = baseQuery.orderBy("createdAt","asc").onSnapshot(snap=>{
+        const newMsgs = snap.docs.map(d=>({id:d.id,...d.data()}));
+        appendNewMessages(newMsgs);
+    }, err=>{
+        console.warn("RT subscription fallback:", err);
+        const fb = db.collection("messages").where("chatId","==",cid).limit(100);
+        unsubscribers.msgs = fb.onSnapshot(s=>{
+            const msgs=s.docs.map(d=>d.data()).sort((a,b)=>(a.createdAt?.seconds||0)-(b.createdAt?.seconds||0));
+            renderMessagesSecurely(msgs, false);
+        });
+    });
+}
+
+function appendNewMessages(msgs) {
+    const cont = document.getElementById('msgContainer');
+    if(cont.firstChild && cont.firstChild.classList?.contains('empty-view')) {
+        cont.innerHTML = '';
+    }
+    
+    msgs.forEach(m => {
+        if(document.querySelector(`[data-msg-id="${m.id}"]`)) return;
+        
+        const bubble = buildBubbleElement(m);
+        bubble.dataset.msgId = m.id;
+        bubble.classList.add('animate-in'); // Only animate NEW messages
+        cont.appendChild(bubble);
+    });
+    
+    const isAtBottom = cont.scrollHeight - cont.scrollTop - cont.clientHeight < 100;
+    if(isAtBottom) {
+        requestAnimationFrame(()=>{cont.scrollTop=cont.scrollHeight;});
+    }
+}
+
+function insertLoadMoreButton(container) {
+    if(!hasMoreMessages || isLoadingOlder) return;
+    const existingBtn = container.querySelector('.load-more-btn');
+    if(existingBtn) existingBtn.remove();
+    const btn = document.createElement('button');
+    btn.className = 'load-more-btn';
+    btn.textContent = '↑ Показать более ранние';
+    btn.onclick = loadOlderMessages;
+    container.insertBefore(btn, container.firstChild);
+}
+
+async function loadOlderMessages() {
+    if(!activeChatId || !msgCursor || isLoadingOlder || !hasMoreMessages) return;
+    isLoadingOlder = true;
+    const btn = document.querySelector('.load-more-btn');
+    if(btn) btn.textContent = 'Загрузка...';
+    
+    try {
+        const cont = document.getElementById('msgContainer');
+        const prevHeight = cont.scrollHeight;
+        const prevTop = cont.scrollTop;
+        
+        const q = db.collection("messages")
+            .where("chatId","==",activeChatId)
+            .orderBy("createdAt","desc")
+            .startAfter(msgCursor)
+            .limit(MSG_PAGE_SIZE);
+        
+        const snap = await q.get();
+        const olderMsgs = snap.docs.map(d=>({id:d.id,...d.data()})).reverse();
+        
+        if(olderMsgs.length < MSG_PAGE_SIZE) hasMoreMessages = false;
+        if(olderMsgs.length > 0) {
+            msgCursor = olderMsgs[0].createdAt;
+            olderMsgs.forEach(m => {
+                if(document.querySelector(`[data-msg-id="${m.id}"]`)) return;
+                const bubble = buildBubbleElement(m);
+                bubble.dataset.msgId = m.id;
+                // No animation for loaded history
+                cont.insertBefore(bubble, cont.firstChild.nextSibling || cont.firstChild);
+            });
+        }
+        
+        requestAnimationFrame(() => {
+            const newHeight = cont.scrollHeight;
+            cont.scrollTop = newHeight - prevHeight + prevTop;
+        });
+        
+        if(hasMoreMessages) insertLoadMoreButton(cont);
+        else if(btn) btn.remove();
+        
+    } catch(err) {
+        handleDbError(err, 'loadOlder');
+        if(btn) btn.textContent = '↑ Показать более ранние';
+    } finally {
+        isLoadingOlder = false;
+    }
+}
+
+function buildBubbleElement(m) {
+    const isMe = m.senderId === user.id;
+    const time = m.createdAt ? new Date(m.createdAt.seconds*1000).toLocaleTimeString([],{hour:'2-digit',minute:'2-digit'}) : '';
+    
+    const bubble = document.createElement('div');
+    bubble.className = `bubble ${isMe?'me':'other'}`;
+    
+    if(m.imageUrl){
+        const img=document.createElement('img');
+        img.src=m.imageUrl;img.alt='Фото';img.loading='lazy';
+        img.style.cssText='max-width:100%;border-radius:8px;margin-top:4px;display:block;';
+        bubble.appendChild(img);
+    }
+    if(m.fileName){
+        const fd=document.createElement('div');
+        fd.textContent='📄 '+m.fileName+' ('+(m.fileSize||'')+')';
+        fd.style.cssText='background:rgba(0,0,0,.05);padding:8px;border-radius:8px;margin-top:4px;';
+        bubble.appendChild(fd);
+    }
+    if(m.text){
+        const td=document.createElement('div');td.textContent=m.text;bubble.appendChild(td);
+    }
+    const ts=document.createElement('span');ts.textContent=time;
+    ts.style.cssText='font-size:10px;opacity:.6;text-align:right;display:block;margin-top:2px;';
+    bubble.appendChild(ts);
+    
+    return bubble;
+}
+
+function renderMessagesSecurely(msgs, isFirstLoad) {
+    const cont=document.getElementById('msgContainer');
+    cont.innerHTML='';
+    
+    if(msgs.length===0){
+        cont.innerHTML='<div class="empty-view">Нет сообщений. Напишите первым!</div>';
+        return;
+    }
+    
+    msgs.forEach(m => {
+        const bubble = buildBubbleElement(m);
+        bubble.dataset.msgId = m.id;
+        // Do NOT add animate-in class during initial load
+        cont.appendChild(bubble);
+    });
+    
+    if(isFirstLoad) {
+        insertLoadMoreButton(cont);
+        requestAnimationFrame(()=>{cont.scrollTop=cont.scrollHeight;});
+    }
+}
+
+// === SEND MESSAGE (BATCH WRITE) ===
+async function sendMessage(){
+    const inp=document.getElementById('msgInput');const txt=inp.value.trim();
+    if(!txt||!activeChatId)return;
+    if(txt.length>4000){toast('Слишком длинное сообщение');return;}
+    
+    const btn=document.getElementById('btnSend');
+    btn.disabled=true;
+    inp.value='';
+    
+    try{
+        const batch = db.batch();
+        const msgRef = db.collection("messages").doc();
+        batch.set(msgRef, {
+            chatId:activeChatId, senderId:user.id, text:txt,
+            createdAt:firebase.firestore.FieldValue.serverTimestamp()
+        });
+        batch.update(db.collection("chats").doc(activeChatId), {
+            lastMessageText:txt,
+            lastMessageTime:firebase.firestore.FieldValue.serverTimestamp(),
+            lastMessageSender:user.id
+        });
+        await batch.commit();
+    }catch(e){
+        handleDbError(e, 'sendMessage');
+        inp.value = txt; 
+    }finally{
+        btn.disabled=false;
+    }
+}
+function handleKey(e){if(e.key==='Enter'&&!e.shiftKey){e.preventDefault();sendMessage();}}
+
+// === FILE UPLOAD WITH PROGRESS ===
+const ALLOWED_TYPES=['image/jpeg','image/png','image/webp','image/gif','application/pdf','text/plain','application/msword','application/vnd.openxmlformats-officedocument.wordprocessingml.document'];
+const BLOCKED_EXT=/\.(exe|bat|sh|cmd|com|scr|msi|jar|apk|dll)$/i;
+const MAX_FILE_SIZE=10*1024*1024;
+
+async function sendFile(input){
+    const f=input.files[0];if(!f||!activeChatId)return;
+    if(BLOCKED_EXT.test(f.name)){toast('Тип файла запрещён политикой безопасности');input.value='';return;}
+    if(!ALLOWED_TYPES.includes(f.type)&&BLOCKED_EXT.test(f.name)){toast('Неподдерживаемый тип');input.value='';return;}
+    if(f.size>MAX_FILE_SIZE){toast('Максимум 10 МБ');input.value='';return;}
+
+    const path=`uploads/${Date.now()}_${f.name.replace(/[^a-zA-Z0-9._-]/g,'_')}`;
+    const task=storage.ref(path).put(f);
+    
+    const tempId = 'tmp_' + Date.now();
+    const cont = document.getElementById('msgContainer');
+    const tempBubble = document.createElement('div');
+    tempBubble.className = 'bubble me animate-in';
+    tempBubble.dataset.msgId = tempId;
+    tempBubble.innerHTML = `<div>📤 Отправка: ${esc(f.name)}</div><div class="upload-progress"><div class="upload-bar" id="bar_${tempId}"></div></div>`;
+    cont.appendChild(tempBubble);
+    cont.scrollTop = cont.scrollHeight;
+    
+    task.on('state_changed',
+        (snapshot) => {
+            const pct = Math.round((snapshot.bytesTransferred / snapshot.totalBytes) * 100);
+            const bar = document.getElementById(`bar_${tempId}`);
+            if(bar) bar.style.width = pct + '%';
+        },
+        (err) => {
+            console.error('Upload failed:', err);
+            tempBubble.innerHTML = `<div style="color:var(--danger)">❌ Ошибка загрузки</div>`;
+            handleDbError(err, 'fileUpload');
+        },
+        async () => {
+            const url=await task.snapshot.ref.getDownloadURL();
+            const isImg=f.type.startsWith('image/');
+            
+            try {
+                const batch = db.batch();
+                const msgRef = db.collection("messages").doc();
+                batch.set(msgRef, {
+                    chatId:activeChatId, senderId:user.id, text:'',
+                    imageUrl:isImg?url:null, fileUrl:url,
+                    fileName:f.name, fileSize:(f.size/1024).toFixed(1)+' KB',
+                    createdAt:firebase.firestore.FieldValue.serverTimestamp()
+                });
+                batch.update(db.collection("chats").doc(activeChatId), {
+                    lastMessageText: isImg ? '📷 Фото' : '📎 ' + f.name,
+                    lastMessageTime: firebase.firestore.FieldValue.serverTimestamp(),
+                    lastMessageSender: user.id
+                });
+                await batch.commit();
+                tempBubble.remove();
+            } catch(e) {
+                handleDbError(e, 'saveFileMeta');
+                tempBubble.innerHTML = `<div style="color:var(--danger)">❌ Файл загружен, но не сохранён</div>`;
+            }
+            input.value='';
+        }
+    );
+}
+
+// === TASKS ===
+function openTaskSheet(){
+    const sel=document.getElementById('tkAssignee');sel.innerHTML='<option value="">Выберите...</option>';
+    Object.values(usersCache).forEach(u=>{if(u.id!==user.id)sel.insertAdjacentHTML('beforeend',`<option value="${u.id}">${escAttr(u.name)}</option>`);});
+    document.getElementById('taskSheet').classList.add('show');
+}
+async function createTask(e){
+    e.preventDefault();
+    const title=document.getElementById('tkTitle').value.trim();
+    const desc=document.getElementById('tkDesc').value.trim();
+    const aid=document.getElementById('tkAssignee').value;
+    if(!title||!aid)return toast('Заполните поля');
+    if(title.length>200)return toast('Заголовок слишком длинный');
+    try{
+        await db.collection("tasks").add({title,description:desc,creatorId:user.id,assigneeId:aid,status:'new',createdAt:firebase.firestore.FieldValue.serverTimestamp()});
+        document.getElementById('taskSheet').classList.remove('show');document.getElementById('tkTitle').value='';toast('Задача создана');
+    }catch(e){handleDbError(e,'createTask');}
+}
+async function cycleTask(id,curr){
+    const next=curr==='new'?'progress':curr==='progress'?'done':'new';
+    try{await db.collection("tasks").doc(id).update({status:next});}
+    catch(e){handleDbError(e,'cycleTask');}
+}
+
+// === DM & PROFILE ===
+async function findOrCreateDM(uid){
+    const ids=[user.id,uid].sort();const detId=`kz_dm_${ids.join('_')}`;
+    try{
+        await db.collection("chats").doc(detId).set({
+            type:'dm', members:ids,
+            createdAt:firebase.firestore.FieldValue.serverTimestamp(),
+            lastMessageTime:firebase.firestore.FieldValue.serverTimestamp(),
+            lastMessageText:''
+        }, {merge:true});
+        openChat(detId);
+    }catch(e){handleDbError(e,'findOrCreateDM');}
+}
+function startDMFromProfile(){document.getElementById('profSheet').classList.remove('show');if(pendingUserId)findOrCreateDM(pendingUserId);}
+function openMyProfile(){
+    pendingUserId=user.id;fillProfileSheet(user);
+    document.getElementById('btnPfAction').onclick=()=>document.getElementById('profSheet').classList.remove('show');
+    document.getElementById('profSheet').classList.add('show');
+}
+
+// === THEME & UTILS ===
+function toggleTheme(){
+    const h=document.documentElement;const d=h.getAttribute('data-theme')==='dark';
+    if(d)h.removeAttribute('data-theme');else h.setAttribute('data-theme','dark');
+    localStorage.setItem('kz_theme',d?'light':'dark');
+}
+if(localStorage.getItem('kz_theme')==='dark')document.documentElement.setAttribute('data-theme','dark');
+
+function esc(t){return String(t??'').replace(/[&<>"]/g,m=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[m]));}
+function escAttr(t){return String(t??'').replace(/[&<>"']/g,m=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#039;'}[m]));}
+function getInitials(n){return n?String(n).split(/\s+/).map(x=>x[0]).slice(0,2).join('').toUpperCase():'?';}
+function hashColor(s){const p=['#0057b8','#e91e63','#9c27b0','#ff9500','#4caf50'];let h=0;s=String(s||'');for(let i=0;i<s.length;i++)h=s.charCodeAt(i)+((h<<5)-h);return p[Math.abs(h)%p.length];}
+function toast(m){const t=document.getElementById('toastEl');t.className='toast show';t.textContent=m;setTimeout(()=>t.classList.remove('show'),3000);}
+</script>
+</body>
+</html>
